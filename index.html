@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaoBuild — ຮ້ານວັດສະດຸກໍ່ສ້າງອອນລາຍ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#0c0c0d;
+    --panel:#151517;
+    --panel-2:#1c1c1f;
+    --line:#2a2a2e;
+    --orange:#f3720c;
+    --orange-dark:#c95a08;
+    --text:#f2f0ec;
+    --text-dim:#9a9a9e;
+    --green:#3fbf6f;
+    --red:#e6533f;
+    --radius:10px;
+    font-family:"Noto Sans Lao","Noto Sans","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  img{max-width:100%;display:block;}
+
+  /* ---------- Top strip ---------- */
+  .topstrip{
+    background:linear-gradient(90deg,var(--orange) 0%, #ff9639 100%);
+    color:#241000;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 20px; gap:12px; flex-wrap:wrap;
+  }
+  .topstrip .left, .topstrip .right{display:flex; gap:16px; align-items:center; flex-wrap:wrap;}
+  .pill{display:flex; align-items:center; gap:6px; opacity:.9;}
+
+  /* ---------- Header ---------- */
+  header.main{
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    padding:14px 20px;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:22px;}
+  .brand .mark{
+    width:38px;height:38px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #ffb35c, var(--orange));
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+  }
+  .cat-btn{
+    background:var(--orange); color:#1a0d00; border:none; padding:10px 16px;
+    border-radius:8px; font-weight:700; font-size:14px; white-space:nowrap;
+  }
+  .search-wrap{flex:1; min-width:220px; display:flex; align-items:center;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .search-wrap input{flex:1; background:transparent; border:none; outline:none; color:var(--text); padding:10px 14px; font-size:14px;}
+  .search-wrap button{background:var(--orange); border:none; color:#1a0d00; padding:10px 16px; font-size:16px;}
+  .head-actions{display:flex; align-items:center; gap:18px; font-size:13px; color:var(--text-dim);}
+  .head-actions .icon-btn{display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text); position:relative;}
+  .badge{position:absolute; top:-6px; right:-10px; background:var(--orange); color:#1a0d00; font-size:10px; border-radius:10px; padding:1px 6px; font-weight:700;}
+
+  /* ---------- Nav ---------- */
+  nav.catnav{
+    background:var(--panel-2); border-bottom:1px solid var(--line);
+    display:flex; gap:26px; padding:12px 20px; font-size:14px; overflow-x:auto;
+  }
+  nav.catnav a{white-space:nowrap; color:var(--text-dim);}
+  nav.catnav a:hover{color:var(--orange);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    margin:20px; border-radius:14px; overflow:hidden;
+    background:linear-gradient(120deg,#1c1108, #2a1608);
+    display:grid; grid-template-columns:1fr 320px; gap:0; border:1px solid var(--line);
+  }
+  .hero-main{padding:36px 40px; display:flex; flex-direction:column; justify-content:center; gap:10px;
+    background:linear-gradient(120deg, rgba(243,114,12,.18), transparent 60%);}
+  .hero-main .tag{color:var(--orange); font-weight:700; font-size:14px;}
+  .hero-main h1{font-size:34px; margin:0; line-height:1.25;}
+  .hero-main p{color:var(--text-dim); margin:0; max-width:480px;}
+  .hero-side{padding:24px; border-left:1px solid var(--line); display:flex; flex-direction:column; gap:12px; background:var(--panel);}
+  .hero-side h3{margin:0; font-size:15px;}
+  .info-row{display:flex; align-items:center; gap:10px; background:var(--panel-2); border-radius:8px; padding:10px 12px; font-size:13px;}
+  .store-btn{background:var(--orange); color:#1a0d00; text-align:center; padding:9px; border-radius:8px; font-weight:700; font-size:13px;}
+
+  /* ---------- Layout ---------- */
+  .layout{display:grid; grid-template-columns:250px 1fr; gap:20px; padding:0 20px 40px;}
+  aside.filters{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; align-self:start; position:sticky; top:16px;}
+  aside.filters h4{margin:0 0 12px; font-size:14px; color:var(--text-dim); text-transform:none;}
+  .filter-item{display:flex; align-items:center; gap:8px; padding:6px 2px; font-size:14px; cursor:pointer;}
+  .filter-item input{accent-color:var(--orange);}
+
+  section.results h2{font-size:16px; margin:4px 0 14px; color:var(--text-dim); font-weight:600;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .card .thumb{aspect-ratio:1/1; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .card .thumb img{width:100%; height:100%; object-fit:contain;}
+  .card .body{padding:12px 14px 14px; display:flex; flex-direction:column; gap:8px; flex:1;}
+  .card .code{font-size:11px; color:var(--text-dim);}
+  .card .name{font-size:13.5px; line-height:1.4; min-height:38px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .card .price{color:var(--orange); font-weight:800; font-size:17px; margin-top:auto;}
+  .stock{font-size:12px; display:flex; align-items:center; gap:5px;}
+  .stock.in{color:var(--green);}
+  .stock.out{color:var(--red);}
+  .add-btn{
+    border:none; border-radius:8px; padding:9px; font-weight:700; font-size:13px;
+    background:var(--orange); color:#1a0d00; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .add-btn[disabled]{background:#333; color:#777; cursor:not-allowed;}
+  .add-btn.added{background:var(--green); color:#08240f;}
+
+  /* ---------- Cart drawer ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:40;}
+  .overlay.show{display:block;}
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:380px; max-width:92vw;
+    background:var(--panel); border-left:1px solid var(--line); z-index:50;
+    transform:translateX(100%); transition:transform .25s ease; display:flex; flex-direction:column;
+  }
+  .drawer.show{transform:translateX(0);}
+  .drawer-head{padding:16px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;}
+  .drawer-body{flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:12px;}
+  .cart-item{display:flex; gap:10px; border-bottom:1px solid var(--line); padding-bottom:12px;}
+  .cart-item img{width:56px; height:56px; object-fit:contain; background:#fff; border-radius:6px;}
+  .cart-item .ci-info{flex:1; font-size:13px;}
+  .qty-ctrl{display:flex; align-items:center; gap:8px; margin-top:6px;}
+  .qty-ctrl button{width:24px; height:24px; border-radius:5px; border:1px solid var(--line); background:var(--panel-2); color:var(--text);}
+  .drawer-foot{border-top:1px solid var(--line); padding:16px 18px; display:flex; flex-direction:column; gap:10px;}
+  .subtotal{display:flex; justify-content:space-between; font-size:15px; font-weight:700;}
+  .checkout-btn{background:var(--orange); color:#1a0d00; border:none; padding:12px; border-radius:8px; font-weight:800; font-size:14px;}
+  .empty-cart{color:var(--text-dim); font-size:13px; text-align:center; padding:40px 0;}
+
+  /* ---------- Checkout modal ---------- */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:60; padding:16px;}
+  .modal.show{display:flex;}
+  .modal-box{background:var(--panel); border:1px solid var(--line); border-radius:14px; width:420px; max-width:100%; padding:22px; max-height:88vh; overflow-y:auto;}
+  .modal-box h3{margin-top:0;}
+  .field{margin-bottom:12px; display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:12px; color:var(--text-dim);}
+  .field input, .field select, .field textarea{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:9px 10px; color:var(--text); font-family:inherit; font-size:14px;
+  }
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+  .modal-actions button{flex:1; padding:11px; border-radius:8px; border:none; font-weight:700;}
+  .btn-cancel{background:var(--panel-2); color:var(--text); border:1px solid var(--line) !important;}
+  .btn-confirm{background:var(--orange); color:#1a0d00;}
+  .note{font-size:12px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:10px; line-height:1.5;}
+
+  /* ---------- QR pay box & slip upload ---------- */
+  .qr-box{display:none; flex-direction:column; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:14px; text-align:center;}
+  .qr-box.show{display:flex;}
+  .qr-box img{width:150px; height:150px; object-fit:contain; background:#fff; border-radius:8px;}
+  .qr-box .qr-cap{font-size:12px; color:var(--text-dim); line-height:1.5;}
+  .slip-field{display:none;}
+  .slip-field.show{display:flex;}
+  .slip-upload{border:1px dashed var(--line); border-radius:8px; padding:12px; text-align:center; font-size:12.5px; color:var(--text-dim); cursor:pointer;}
+  .slip-upload:hover{border-color:var(--orange); color:var(--orange);}
+  .slip-preview{width:100%; max-height:150px; object-fit:contain; border-radius:8px; margin-top:8px; background:#fff; display:none;}
+
+  /* ---------- Receipt modal ---------- */
+  #receiptContent{font-size:13.5px; line-height:1.7;}
+  #receiptContent .r-row{display:flex; justify-content:space-between; gap:10px;}
+  #receiptContent .r-slip{width:100%; max-height:160px; object-fit:contain; border-radius:8px; margin:10px 0; background:#fff;}
+
+  /* ---------- Product detail modal ---------- */
+  .pd-modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:65; padding:16px;}
+  .pd-modal.show{display:flex;}
+  .pd-box{background:var(--panel); border:1px solid var(--line); border-radius:14px; width:660px; max-width:100%; max-height:90vh; overflow-y:auto; display:grid; grid-template-columns:260px 1fr;}
+  .pd-img{background:#fff; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .pd-img img{max-height:280px;}
+  .pd-info{padding:22px; display:flex; flex-direction:column; gap:10px;}
+  .pd-info h3{margin:0; font-size:18px; line-height:1.4;}
+  .pd-info .price{color:var(--orange); font-weight:800; font-size:20px;}
+  .pd-desc{color:var(--text-dim); font-size:13.5px; line-height:1.65; white-space:pre-wrap;}
+
+  footer{padding:24px 20px; text-align:center; color:var(--text-dim); font-size:12px; border-top:1px solid var(--line);}
+  .fab{position:fixed; bottom:20px; right:20px; background:var(--orange); color:#1a0d00; border:none; width:48px; height:48px; border-radius:50%; font-size:20px; z-index:30;}
+
+  @media(max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    aside.filters{position:static;}
+    .hero{grid-template-columns:1fr;}
+  }
+  @media(max-width:640px){
+    .pd-box{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topstrip">
+  <div class="left">
+    <span class="pill">☎ 020 9883 2516</span>
+    <span class="pill">🕐 ເປີດ 08:00–19:00</span>
+    <span class="pill">● ເປີດບໍລິການ</span>
+  </div>
+  <div class="right">
+    <span class="pill">📍 ນະຄອນຫຼວງວຽງຈັນ</span>
+    <span class="pill">🚚 ຈັດສົ່ງທົ່ວປະເທດ 3-5 ວັນ</span>
+  </div>
+</div>
+
+<header class="main">
+  <div class="brand"><span class="mark">🧱</span> MKD TOOLSTORE</div>
+  <button class="cat-btn">☰ ໝວດໝູ່ສິນຄ້າ</button>
+  <div class="search-wrap">
+    <input id="searchInput" type="text" placeholder="ຄົ້ນຫາສິນຄ້າ... ເຊັ່ນ: ສີທາເຮືອນ, ວາວ, ອຸປະກອນໄຟຟ້າ">
+    <button onclick="applyFilters()">🔍</button>
+  </div>
+  <div class="head-actions">
+    <a class="icon-btn">👤<span>ບັນຊີ</span></a>
+    <a class="icon-btn" onclick="openCart()">🛒<span>ກະຕ່າ</span><span class="badge" id="cartCount">0</span></a>
+  </div>
+</header>
+
+<nav class="catnav">
+  <a href="#">ຮ້ານຄ້າທັງໝົດ</a>
+  <a href="#">ໂປຣໂມຊັນ</a>
+  <a href="#">ສີ ແລະ ອຸປະກອນທາສີ</a>
+  <a href="#">ວັດສະດຸກໍ່ສ້າງ</a>
+  <a href="#">ອຸປະກອນໄຟຟ້າ</a>
+  <a href="#">ອຸປະກອນປະປາ</a>
+  <a href="#">ຮາດແວ ແລະ ເຄື່ອງມືຊ່າງ</a>
+  <a href="#">ຈຸດຮັບຄືນສິນຄ້າ</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-main">
+    <span class="tag">ໂປຣໂມຊັນປະຈຳເດືອນ</span>
+    <h1>ຊື້ 100 ແຖມ 4<br>ວັດສະດຸກໍ່ສ້າງຄຸນນະພາບ</h1>
+    <p>ຊື້ຄົບຕາມເງື່ອນໄຂ ຮັບສ່ວນຫຼຸດ ແລະ ຂອງແຖມທັນທີ. ຈັດສົ່ງທົ່ວປະເທດພາຍໃນ 3–5 ວັນ.</p>
+  </div>
+  <div class="hero-side">
+    <h3>ຕິດຕໍ່ ແລະ ຊ່ວຍເຫຼືອ</h3>
+    <div class="info-row">🚚 ຈັດສົ່ງທົ່ວປະເທດ 3-5 ວັນ</div>
+    <div class="info-row">💳 ຊຳລະປາຍທາງ / ໂອນຜ່ານທະນາຄານ</div>
+    <div class="info-row">↩️ ຮັບປ່ຽນ/ຄືນສິນຄ້າພາຍໃນ 7 ວັນ</div>
+    <div class="store-btn">ດາວໂຫລດແອັບ LaoBuild</div>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="filters">
+    <h4>ຄົ້ນຫາຕາມໝວດ</h4>
+    <div id="categoryFilters"></div>
+    <h4 style="margin-top:20px;">ສະຖານະສິນຄ້າ</h4>
+    <label class="filter-item"><input type="checkbox" id="inStockOnly"> ສະເພາະສິນຄ້າທີ່ມີ</label>
+  </aside>
+
+  <section class="results">
+    <h2 id="resultCount">ກຳລັງໂຫລດສິນຄ້າ...</h2>
+    <div class="grid" id="productGrid"></div>
+  </section>
+</div>
+
+<footer>
+  © 2026 LaoBuild — ຕົວຢ່າງເວັບໄຊທ໌ (Prototype). ຂໍ້ມູນສິນຄ້າດຶງມາຈາກ Google Sheet ທີ່ເຊື່ອມຕໍ່ໄວ້.
+</footer>
+
+<button class="fab" onclick="openCart()">🛒</button>
+
+<!-- Cart Drawer -->
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <strong>ກະຕ່າສິນຄ້າ</strong>
+    <button onclick="closeCart()" style="background:none;border:none;color:var(--text);font-size:18px;">✕</button>
+  </div>
+  <div class="drawer-body" id="cartItems"></div>
+  <div class="drawer-foot">
+    <div class="subtotal"><span>ລວມທັງໝົດ</span><span id="cartTotal">₭ 0</span></div>
+    <button class="checkout-btn" onclick="openCheckout()">ດຳເນີນການສັ່ງຊື້</button>
+  </div>
+</div>
+
+<!-- Checkout Modal -->
+<div class="modal" id="checkoutModal">
+  <div class="modal-box">
+    <h3>ຢືນຢັນການສັ່ງຊື້</h3>
+    <div class="field"><label>ຊື່ ແລະ ນາມສະກຸນ</label><input id="custName" placeholder="ຊື່ຜູ້ຮັບ"></div>
+    <div class="field"><label>ເບີໂທຕິດຕໍ່</label><input id="custPhone" placeholder="020 xxxxxxxx"></div>
+    <div class="field"><label>ທີ່ຢູ່ຈັດສົ່ງ</label><textarea id="custAddr" rows="2" placeholder="ບ້ານ, ເມືອງ, ແຂວງ"></textarea></div>
+    <div class="field">
+      <label>ວິທີຊຳລະເງິນ</label>
+      <select id="payMethod" onchange="togglePaymentExtras()">
+        <option>ຊຳລະປາຍທາງ (COD)</option>
+        <option>ໂອນຜ່ານທະນາຄານ</option>
+        <option>ຊຳລະຜ່ານ QR / Mobile Banking</option>
+      </select>
+    </div>
+    <div class="qr-box" id="qrBox">
+      <img id="qrImage" src="" alt="ຄິວອາໂອນເງິນ">
+      <div class="qr-cap">ສະແກນ QR ນີ້ດ້ວຍແອັບທະນາຄານ/ Mobile Banking ເພື່ອໂອນເງິນ ແລ້ວອັບໂຫລດຫຼັກຖານດ້ານລຸ່ມ</div>
+    </div>
+    <div class="field slip-field" id="slipField">
+      <label>ອັບໂຫລດຫຼັກຖານການໂອນເງິນ (ຮູບສະລິບ)</label>
+      <label class="slip-upload" for="slipInput">📎 ກົດເພື່ອເລືອກຮູບສະລິບຈາກເຄື່ອງ</label>
+      <input type="file" id="slipInput" accept="image/*" style="display:none;" onchange="onSlipSelected(event)">
+      <img id="slipPreview" class="slip-preview">
+    </div>
+    <div class="note">⚠️ ນີ້ເປັນ Prototype: ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບຊຳລະເງິນຈິງ ຫຼື ຖານຂໍ້ມູນຄຳສັ່ງຊື້. ການສັ່ງຊື້ນີ້ຈະສະແດງພຽງສະຫຼຸບເທົ່ານັ້ນ.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCheckout()">ຍົກເລີກ</button>
+      <button class="btn-confirm" onclick="confirmOrder()">ຢືນຢັນສັ່ງຊື້</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Receipt Modal -->
+<div class="modal" id="receiptModal">
+  <div class="modal-box" style="width:420px;">
+    <h3>✅ ສັ່ງຊື້ສຳເລັດ (ຕົວຢ່າງ)</h3>
+    <div id="receiptContent"></div>
+    <div class="note" style="margin-top:10px;">⚠️ ນີ້ເປັນ Prototype: ຍັງບໍ່ໄດ້ບັນທຶກຄຳສັ່ງຊື້ຈິງ ຫຼືເຊື່ອມຕໍ່ລະບົບຊຳລະເງິນ.</div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-confirm" style="flex:1;" onclick="closeReceipt()">ປິດ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="pd-modal" id="pdModal" onclick="if(event.target===this)closePD()">
+  <div class="pd-box">
+    <div class="pd-img"><img id="pdImage" src="" alt=""></div>
+    <div class="pd-info">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <span class="tag" id="pdCategory"></span>
+        <button onclick="closePD()" style="background:none;border:none;color:var(--text);font-size:18px;">✕</button>
+      </div>
+      <h3 id="pdName"></h3>
+      <div class="price" id="pdPrice"></div>
+      <div class="stock" id="pdStock"></div>
+      <div class="pd-desc" id="pdDesc"></div>
+      <button class="add-btn" id="pdAddBtn" style="margin-top:auto;">🛒 ເພີ່ມລົງກະຕ່າ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   1) DATA SOURCE — Google Sheet connection
+   ---------------------------------------------------------
+   Fill GOOGLE_SHEET_CSV_URL with your sheet's published CSV link:
+   Google Sheet → File → Share → Publish to web → choose the
+   product sheet/tab → CSV → copy the link here.
+
+   Required column headers in your sheet (first row), in Lao or English:
+   id | name | price | image | category | stock | code
+
+   If the URL below is left as-is (empty) or fails to load, the page
+   will fall back to the SAMPLE_PRODUCTS array so you can preview
+   the design before hooking up your real sheet.
+   ========================================================= */
+const GOOGLE_SHEET_CSV_URL = ""; // <-- put your published Google Sheet CSV link here
+
+/* Store payment QR code shown at checkout for bank-transfer / QR payment methods.
+   Replace with your real QR image link, or generate this line from the admin
+   panel's "ຕັ້ງຄ່າ" page ("ຄັດລອກໂຄ້ດ QR") and paste it here. */
+const STORE_QR_IMAGE = "https://placehold.co/300x300/ffffff/222?text=Store+QR";
+
+const SAMPLE_PRODUCTS = [
+  {id:"27976", code:"+27976 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-112)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:true, description:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ຄຸນນະພາບສູງ ຄວາມເຄີ່ງເງົາ ໃຫ້ຄວາມທົນທານຕໍ່ຮອຍຂູດຂີດ ແລະ ສະພາບອາກາດ ເໝາະສຳລັບງານທາເຫຼັກທົ່ວໄປທັງພາຍໃນ ແລະ ພາຍນອກ."},
+  {id:"27735", code:"+27735 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-115)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:false, description:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ຄວາມເຄີ່ງເງົາ ໂທນສີ LR-115 ແຫ້ງໄວ ບໍ່ມີກິ່ນສານເຄມີແຮງ."},
+  {id:"24473", code:"+24473 (5Z)", name:"ສີຮອງພື້ນ ປູນເກົ່າ ແລະ ປູນໃໝ່ ຜາຍນອກ-ໃນ (#1000)", price:2254789, image:"https://placehold.co/300x300/e6533f/fff?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:true, description:"ສີຮອງພື້ນສຳລັບປູນເກົ່າ ແລະ ປູນໃໝ່ ໃຊ້ໄດ້ທັງພາຍໃນ ແລະ ພາຍນອກ ຊ່ວຍໃຫ້ສີທັບໜ້າຕິດແໜ້ນ ແລະ ສີສະໝ່ຳສະເໝີກວ່າ."},
+  {id:"22129", code:"+22129 (3Z)", name:"ທິນເນີ ປະສົມແລກເກີ (No.R71) (1/4GL) TOA", price:121136, image:"https://placehold.co/300x300/1c1c1f/f2f0ec?text=Thinner", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:true, description:"ທິນເນີສຳລັບປະສົມແລກເກີ ຮຸ້ນ No.R71 ຂະໜາດ 1/4 ແກລອນ ຈາກ TOA ໃຊ້ປັບຄວາມຂຸ້ນຂອງແລກເກີກ່ອນສີດ/ທາ."},
+  {id:"67011", code:"+67011", name:"ດອກໄຟດອກປ້ອມ ແອວຈິດ (E27) ແສງຂາວ (6500K)", price:44174, image:"https://placehold.co/300x300/ffffff/222?text=LED", category:"ອຸປະກອນໄຟຟ້າ", stock:true, description:"ດອກໄຟ LED ຂົ້ວ E27 ແສງຂາວ 6500K ປະຢັດພະລັງງານ ອາຍຸການໃຊ້ງານຍາວນານ ເໝາະສຳລັບໃຊ້ພາຍໃນເຮືອນ ແລະ ຮ້ານຄ້າ."},
+  {id:"67851", code:"+67851", name:"ປຕູນ້ຳ ເປີດ-ປິດ ແບບ 2ທາງ (ສະແຕນເລດ 304) ຮຸ້ນ SY01", price:155015, image:"https://placehold.co/300x300/ffffff/222?text=Valve", category:"ອຸປະກອນປະປາ", stock:true, description:"ປະຕູນ້ຳແບບ 2 ທາງ ຜະລິດຈາກສະແຕນເລດເບີ 304 ທົນຕໍ່ສະໜິມ ເໝາະສຳລັບລະບົບປະປາພາຍໃນເຮືອນ ແລະ ອາຄານ."},
+  {id:"58951", code:"+58951 (1Z)", name:"ຊີມັງກາວ ເວເບີ ໄທເຊບ ສຳລັບກະເບື້ອງ", price:108599, image:"https://placehold.co/300x300/ffe14d/222?text=Weber", category:"ວັດສະດຸກໍ່ສ້າງ", stock:true, description:"ຊີມັງກາວສຳລັບຕິດຕັ້ງກະເບື້ອງ ຈາກ Weber ຮຸ້ນ ໄທເຊບ ຍຶດຕິດແໜ້ນ ທົນຄວາມຊຸ່ມ ເໝາະສຳລັບພື້ນ ແລະ ຝາ."},
+  {id:"43196", code:"+43196", name:"ກ໊ອກສະໜາມ (ຂາຕັ້ງ) ຫົວທອງເຫຼືອງ ຫົວຟ້າ", price:80502, image:"https://placehold.co/300x300/ffffff/222?text=Faucet", category:"ອຸປະກອນປະປາ", stock:true, description:"ກ໊ອກນ້ຳສະໜາມແບບຂາຕັ້ງ ຫົວທອງເຫຼືອງແທ້ ໃຫ້ຄວາມທົນທານສູງ ເໝາະສຳລັບໃຊ້ພາຍນອກອາຄານ."},
+  {id:"34248", code:"+34248", name:"ບອບອາວ ສີຝາ (18mm) (150ອັນ/ຖົງ) SCG", price:30546, image:"https://placehold.co/300x300/ffffff/222?text=Screw", category:"ຮາດແວ ແລະ ເຄື່ອງມືຊ່າງ", stock:true, description:"ບອບອາວສີຝາ ຂະໜາດ 18mm ບັນຈຸ 150 ອັນຕໍ່ຖົງ ຈາກ SCG ເໝາະສຳລັບງານໄມ້ ແລະ ງານໂຄງສ້າງທົ່ວໄປ."},
+];
+
+let ALL_PRODUCTS = [];
+let CART = {}; // id -> {product, qty}
+
+function formatKip(n){
+  return "₭ " + Number(n).toLocaleString("en-US");
+}
+
+function loadProducts(){
+  if(!GOOGLE_SHEET_CSV_URL){
+    ALL_PRODUCTS = SAMPLE_PRODUCTS;
+    afterProductsLoaded();
+    return;
+  }
+  Papa.parse(GOOGLE_SHEET_CSV_URL, {
+    download:true,
+    header:true,
+    skipEmptyLines:true,
+    complete:function(results){
+      try{
+        ALL_PRODUCTS = results.data.map(row => ({
+          id: row.id || row.ID || row.code,
+          code: row.code || row.id,
+          name: row.name || row.ຊື່ || "ບໍ່ມີຊື່",
+          price: Number(String(row.price || 0).replace(/[^0-9.]/g,"")) || 0,
+          image: row.image || "https://placehold.co/300x300/222/fff?text=No+Image",
+          category: row.category || "ອື່ນໆ",
+          stock: String(row.stock).toLowerCase() !== "false" && String(row.stock).trim() !== "0",
+          description: row.description || row.ລາຍລະອຽດ || "",
+        }));
+        if(ALL_PRODUCTS.length === 0) throw new Error("empty sheet");
+      }catch(e){
+        console.warn("Sheet parse failed, using sample data", e);
+        ALL_PRODUCTS = SAMPLE_PRODUCTS;
+      }
+      afterProductsLoaded();
+    },
+    error:function(err){
+      console.warn("Could not load Google Sheet, using sample data", err);
+      ALL_PRODUCTS = SAMPLE_PRODUCTS;
+      afterProductsLoaded();
+    }
+  });
+}
+
+function afterProductsLoaded(){
+  buildCategoryFilters();
+  applyFilters();
+}
+
+function buildCategoryFilters(){
+  const cats = [...new Set(ALL_PRODUCTS.map(p=>p.category))];
+  const wrap = document.getElementById("categoryFilters");
+  wrap.innerHTML = cats.map(c => `
+    <label class="filter-item">
+      <input type="checkbox" class="catCheck" value="${c}" onchange="applyFilters()"> ${c}
+    </label>`).join("");
+}
+
+function applyFilters(){
+  const term = document.getElementById("searchInput").value.trim().toLowerCase();
+  const checked = [...document.querySelectorAll(".catCheck:checked")].map(c=>c.value);
+  const inStockOnly = document.getElementById("inStockOnly").checked;
+
+  let filtered = ALL_PRODUCTS.filter(p=>{
+    if(term && !p.name.toLowerCase().includes(term) && !(p.code||"").toLowerCase().includes(term)) return false;
+    if(checked.length && !checked.includes(p.category)) return false;
+    if(inStockOnly && !p.stock) return false;
+    return true;
+  });
+
+  document.getElementById("resultCount").textContent = `ພົບ ${filtered.length} ລາຍການ`;
+  renderGrid(filtered);
+}
+document.getElementById("inStockOnly").addEventListener("change", applyFilters);
+document.getElementById("searchInput").addEventListener("input", ()=>applyFilters());
+
+function renderGrid(products){
+  const grid = document.getElementById("productGrid");
+  if(products.length === 0){
+    grid.innerHTML = `<div style="color:var(--text-dim); padding:40px 0;">ບໍ່ພົບສິນຄ້າທີ່ຄົ້ນຫາ</div>`;
+    return;
+  }
+  grid.innerHTML = products.map(p => `
+    <div class="card">
+      <div class="thumb" style="cursor:pointer;" onclick="openProductDetail('${p.id}')"><img src="${p.image}" alt="${p.name}"></div>
+      <div class="body">
+        <div class="code">${p.code || p.id}</div>
+        <div class="name" style="cursor:pointer;" onclick="openProductDetail('${p.id}')">${p.name}</div>
+        <div class="price">${formatKip(p.price)}</div>
+        <div class="stock ${p.stock ? "in":"out"}">${p.stock ? "✔ ມີສິນຄ້າ" : "✕ ສິນຄ້າໝົດ"}</div>
+        <button class="add-btn" ${p.stock?"":"disabled"} onclick="addToCart('${p.id}', this)">
+          🛒 ${p.stock ? "ເພີ່ມລົງກະຕ່າ" : "ສິນຄ້າໝົດ"}
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addToCart(id, btn){
+  const product = ALL_PRODUCTS.find(p=>String(p.id)===String(id));
+  if(!product) return;
+  if(CART[id]) CART[id].qty += 1;
+  else CART[id] = {product, qty:1};
+  updateCartUI();
+  if(btn){
+    btn.classList.add("added");
+    btn.textContent = "✔ ເພີ່ມແລ້ວ";
+    setTimeout(()=>{ btn.classList.remove("added"); btn.innerHTML = "🛒 ເພີ່ມລົງກະຕ່າ"; }, 900);
+  }
+}
+
+function changeQty(id, delta){
+  if(!CART[id]) return;
+  CART[id].qty += delta;
+  if(CART[id].qty <= 0) delete CART[id];
+  updateCartUI();
+}
+
+function updateCartUI(){
+  const items = Object.entries(CART);
+  const count = items.reduce((s,[,v])=>s+v.qty,0);
+  document.getElementById("cartCount").textContent = count;
+
+  const wrap = document.getElementById("cartItems");
+  if(items.length === 0){
+    wrap.innerHTML = `<div class="empty-cart">ກະຕ່າຂອງທ່ານຍັງບໍ່ມີສິນຄ້າ</div>`;
+  }else{
+    wrap.innerHTML = items.map(([id,v])=>`
+      <div class="cart-item">
+        <img src="${v.product.image}">
+        <div class="ci-info">
+          <div>${v.product.name}</div>
+          <div style="color:var(--orange); font-weight:700; margin-top:4px;">${formatKip(v.product.price)}</div>
+          <div class="qty-ctrl">
+            <button onclick="changeQty('${id}',-1)">−</button>
+            <span>${v.qty}</span>
+            <button onclick="changeQty('${id}',1)">+</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  const total = items.reduce((s,[,v])=> s + v.qty*v.product.price, 0);
+  document.getElementById("cartTotal").textContent = formatKip(total);
+}
+
+function openCart(){ document.getElementById("drawer").classList.add("show"); document.getElementById("overlay").classList.add("show"); }
+function closeCart(){ document.getElementById("drawer").classList.remove("show"); document.getElementById("overlay").classList.remove("show"); }
+
+let SLIP_DATA_URL = null;
+
+function openCheckout(){
+  if(Object.keys(CART).length === 0){ alert("ກະຕ່າຍັງບໍ່ມີສິນຄ້າ"); return; }
+  SLIP_DATA_URL = null;
+  document.getElementById("slipInput").value = "";
+  document.getElementById("slipPreview").style.display = "none";
+  document.getElementById("payMethod").value = "ຊຳລະປາຍທາງ (COD)";
+  togglePaymentExtras();
+  document.getElementById("checkoutModal").classList.add("show");
+}
+function closeCheckout(){ document.getElementById("checkoutModal").classList.remove("show"); }
+
+function paymentNeedsSlip(){
+  return document.getElementById("payMethod").value !== "ຊຳລະປາຍທາງ (COD)";
+}
+
+function togglePaymentExtras(){
+  const needsSlip = paymentNeedsSlip();
+  document.getElementById("qrImage").src = STORE_QR_IMAGE;
+  document.getElementById("qrBox").classList.toggle("show", needsSlip);
+  document.getElementById("slipField").classList.toggle("show", needsSlip);
+}
+
+function onSlipSelected(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    SLIP_DATA_URL = e.target.result;
+    const preview = document.getElementById("slipPreview");
+    preview.src = SLIP_DATA_URL;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
+
+function confirmOrder(){
+  const name = document.getElementById("custName").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+  const addr = document.getElementById("custAddr").value.trim();
+  if(!name || !phone || !addr){ alert("ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ"); return; }
+  if(paymentNeedsSlip() && !SLIP_DATA_URL){ alert("ກະລຸນາອັບໂຫລດຮູບສະລິບການໂອນເງິນກ່ອນຢືນຢັນສັ່ງຊື້"); return; }
+
+  const total = Object.values(CART).reduce((s,v)=> s + v.qty*v.product.price, 0);
+  const pay = document.getElementById("payMethod").value;
+
+  document.getElementById("receiptContent").innerHTML = `
+    <div class="r-row"><span>ຜູ້ຮັບ</span><strong>${name}</strong></div>
+    <div class="r-row"><span>ເບີໂທ</span><strong>${phone}</strong></div>
+    <div class="r-row"><span>ທີ່ຢູ່</span><strong>${addr}</strong></div>
+    <div class="r-row"><span>ວິທີຊຳລະ</span><strong>${pay}</strong></div>
+    <div class="r-row"><span>ຍອດລວມ</span><strong style="color:var(--orange);">${formatKip(total)}</strong></div>
+    ${SLIP_DATA_URL ? `<div style="font-size:12px; color:var(--text-dim); margin-top:8px;">ຫຼັກຖານການໂອນເງິນ:</div><img class="r-slip" src="${SLIP_DATA_URL}">` : ""}
+  `;
+  document.getElementById("receiptModal").classList.add("show");
+
+  CART = {};
+  updateCartUI();
+  closeCheckout();
+  closeCart();
+}
+function closeReceipt(){ document.getElementById("receiptModal").classList.remove("show"); }
+
+function openProductDetail(id){
+  const p = ALL_PRODUCTS.find(x=>String(x.id)===String(id));
+  if(!p) return;
+  document.getElementById("pdImage").src = p.image;
+  document.getElementById("pdCategory").textContent = p.category;
+  document.getElementById("pdName").textContent = p.name;
+  document.getElementById("pdPrice").textContent = formatKip(p.price);
+  document.getElementById("pdDesc").textContent = p.description && p.description.trim() ? p.description : "ບໍ່ມີລາຍລະອຽດເພີ່ມເຕີມສຳລັບສິນຄ້ານີ້.";
+  const stockEl = document.getElementById("pdStock");
+  stockEl.className = "stock " + (p.stock ? "in" : "out");
+  stockEl.textContent = p.stock ? "✔ ມີສິນຄ້າ" : "✕ ສິນຄ້າໝົດ";
+  const addBtn = document.getElementById("pdAddBtn");
+  addBtn.disabled = !p.stock;
+  addBtn.innerHTML = p.stock ? "🛒 ເພີ່ມລົງກະຕ່າ" : "ສິນຄ້າໝົດ";
+  addBtn.onclick = function(){ addToCart(p.id); closePD(); };
+  document.getElementById("pdModal").classList.add("show");
+}
+function closePD(){ document.getElementById("pdModal").classList.remove("show"); }
+
+loadProducts();
+</script>
+</body>
+</html>
