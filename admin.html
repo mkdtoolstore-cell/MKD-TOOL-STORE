@@ -308,8 +308,9 @@
             <option value="ສຳເລັດ">ສຳເລັດ</option>
             <option value="ຍົກເລີກ">ຍົກເລີກ</option>
           </select>
-          <button class="btn btn-ghost" onclick="renderOrdersPage()">🔄 ໂຫລດຄືນໃໝ່</button>
+          <button class="btn btn-ghost" onclick="reloadOrders()">🔄 ໂຫລດຄືນໃໝ່</button>
         </div>
+        <div class="note" id="ordersModeNote" style="margin-bottom:14px;">ຂໍ້ມູນຄຳສັ່ງຊື້ນີ້ບັນທຶກຢູ່ໃນ browser ຂອງເຄື່ອງນີ້ເທົ່ານັ້ນ (ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Google Sheet — ເບິ່ງໜ້າ "ເຊື່ອມຕໍ່ຮ້ານ")</div>
         <table>
           <thead><tr><th>ລະຫັດ / ວັນທີ</th><th>ລູກຄ້າ</th><th>ການຊຳລະ</th><th>ຍອດລວມ</th><th>ສະຖານະ</th><th></th></tr></thead>
           <tbody id="ordersTableBody"></tbody>
@@ -338,7 +339,25 @@
       </div>
 
       <div class="panel">
-        <h3>① ວິທີສຳຮອງ — ສົ່ງອອກເປັນ CSV ໄປ Google Sheet</h3>
+        <h3>🧾 ຄຳສັ່ງຊື້ (Orders) — ເຊື່ອມຕໍ່ Google Sheet ແບບຈິງ (ແນະນຳ)</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px; line-height:1.7;">
+          ວິທີນີ້ເຮັດໃຫ້ຄຳສັ່ງຊື້ຂອງລູກຄ້າ (ຮວມທັງຮູບສະລິບ) ຖືກບັນທຶກໃນ Google Sheet ຈິງ ແລະ ໜ້າແອັດມິນນີ້ຈະເຫັນຄຳສັ່ງຊື້
+          ຈາກລູກຄ້າໄດ້ ບໍ່ວ່າຈະເປີດຈາກເຄື່ອງ/browser ໃດກໍ່ຕາມ (ແກ້ບັນຫາ browser storage ຂ້າງເທິງ):
+        </p>
+        <ol style="color:var(--text-dim); font-size:13px; line-height:1.9; padding-left:20px; margin:0 0 12px;">
+          <li>ສ້າງ Google Sheet ໃໝ່ (ຫ້ອງວ່າງໆ ກໍ່ໄດ້, ບໍ່ຕ້ອງໃສ່ຫົວຕາຕະລາງເອງ)</li>
+          <li>ໃນ Sheet ນັ້ນ ໄປທີ່ ເມນູ <strong>Extensions → Apps Script</strong></li>
+          <li>ລຶບໂຄ້ດຕົວຢ່າງໃນນັ້ນອອກ ແລ້ວວາງໂຄ້ດ Apps Script ທີ່ Claude ໄດ້ສ້າງໃຫ້ (ໄຟລ໌ <code>orders-backend.gs</code>) ລົງແທນ</li>
+          <li>ກົດ <strong>Deploy → New deployment</strong> → ເລືອກປະເພດ <strong>Web app</strong> →
+            "Execute as" = Me, "Who has access" = Anyone → ກົດ Deploy ແລ້ວອະນຸຍາດສິດ (Authorize)</li>
+          <li>ກັອບປີ້ລິ້ງ Web app URL (ລົງທ້າຍດ້ວຍ <code>/exec</code>) ທີ່ໄດ້</li>
+          <li>ນຳລິ້ງນັ້ນໄປວາງໃສ່ຕົວແປ <code>ORDERS_API_URL</code> ໃນທັງ <strong>index.html</strong> ແລະ <strong>admin.html</strong> (ຄົ້ນຫາຄຳວ່າ <code>ORDERS_API_URL</code> ໃນໄຟລ໌ ຈະເຫັນຕຳແໜ່ງທີ່ຕ້ອງວາງ)</li>
+        </ol>
+        <div class="note">💡 ຖ້າຍັງບໍ່ຢາກຕັ້ງຄ່ານີ້, ລະບົບຈະໃຊ້ browser storage ຄືເດີມ ໂດຍອັດຕະໂນມັດ (ບໍ່ຈຳເປັນ, ແຕ່ແນະນຳສຳລັບການໃຊ້ງານຈິງ)</div>
+      </div>
+
+      <div class="panel">
+        <h3>📦 ສິນຄ້າ (Products) — ວິທີສຳຮອງ — ສົ່ງອອກເປັນ CSV ໄປ Google Sheet</h3>
         <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ໃຊ້ວິທີນີ້ຖ້າຕ້ອງການໃຫ້ຫຼາຍຄົນອັບເດດສິນຄ້າຜ່ານ Google Sheet ແທນ. ດາວໂຫລດ CSV ແລ້ວນຳໄປວາງໃສ່ Google Sheet, Publish to web ເປັນ CSV ແລ້ວນຳລິ້ງໄປໃສ່ໃນຕົວແປ <code>GOOGLE_SHEET_CSV_URL</code> ໃນໄຟລ໌ index.html</p>
         <div class="toolbar" style="margin-bottom:0;">
           <button class="btn btn-primary" onclick="exportCSV()">⬇ ດາວໂຫລດ products.csv</button>
@@ -348,7 +367,7 @@
       </div>
 
       <div class="panel">
-        <h3>② ວິທີສຳຮອງ — ວາງລົງໄຟລ໌ index.html ໂດຍກົງ</h3>
+        <h3>📦 ສິນຄ້າ (Products) — ວິທີສຳຮອງ — ວາງລົງໄຟລ໌ index.html ໂດຍກົງ</h3>
         <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ກັອບປີ້ໂຄ້ດລຸ່ມນີ້ ແລ້ວນຳໄປແທນທີ່ຕົວແປ <code>SAMPLE_PRODUCTS</code> ໃນໄຟລ໌ index.html</p>
         <div class="toolbar" style="margin-bottom:10px;">
           <button class="btn btn-ghost" onclick="copyJSArray()">📋 ກັອບປີ້ໂຄ້ດ</button>
@@ -483,6 +502,15 @@ const AUTH_KEY = "laobuild_admin_auth";
 const DEFAULT_PW = "admin1234";
 const DEFAULT_QR = "https://placehold.co/300x300/ffffff/222?text=Store+QR";
 
+/* =========================================================
+   ORDERS BACKEND — Google Apps Script Web App (ທາງເລືອກ)
+   ວາງລິ້ງ Web App ດຽວກັນກັບທີ່ວາງໄວ້ໃນ index.html (ຕົວແປ
+   ORDERS_API_URL) ເພື່ອໃຫ້ໜ້ານີ້ດຶງ/ອັບເດດຄຳສັ່ງຊື້ຈິງຈາກ
+   Google Sheet — ເບິ່ງວິທີສ້າງ ແລະ ຕິດຕັ້ງໄດ້ໃນໜ້າ "ເຊື່ອມຕໍ່ຮ້ານ".
+   ຖ້າປະໄວ້ຫວ່າງ, ຄຳສັ່ງຊື້ຈະໃຊ້ browser storage ຂອງເຄື່ອງນີ້ (ຄືເດີມ).
+   ========================================================= */
+const ORDERS_API_URL = ""; // <-- put the same Google Apps Script /exec URL as in index.html
+
 const SAMPLE_PRODUCTS = [
   {id:"27976", code:"+27976 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-112)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:12, description:"ສີສູດນ້ຳສຳລັບທາເຫຼັກເປືອຍ ຄວາມເຄີ່ງເງົາ ທົນທານຕໍ່ສະພາບອາກາດ ແຫ້ງໄວ ບໍ່ມີກິ່ນສານລະລາຍແຮງ."},
   {id:"27735", code:"+27735 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-115)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:0, description:"ສີສູດນ້ຳ ຄວາມເຄີ່ງເງົາ ໂທນສີ LR-115 ແຫ້ງໄວ ໃຊ້ງານໄດ້ດີກັບພື້ນຜິວເຫຼັກເປືອຍ."},
@@ -525,6 +553,7 @@ function enterApp(){
   loadSettings();
   loadOrders();
   refreshAll();
+  if(ORDERS_API_URL) syncOrdersFromApi();
 }
 if(sessionStorage.getItem(AUTH_KEY) === "1"){
   enterApp();
@@ -562,11 +591,39 @@ function persistCategories(){
 }
 
 /* ---------------- DATA: ORDERS ---------------- */
+let ORDERS_SYNCING = false;
 function loadOrders(){
   try{ ORDERS = JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }catch(e){ ORDERS = []; }
 }
 function persistOrders(){
   localStorage.setItem(ORDERS_KEY, JSON.stringify(ORDERS));
+}
+
+/* ---------------- ORDERS BACKEND (Google Sheet via Apps Script) ---------------- */
+function callOrdersApi(payload){
+  return fetch(ORDERS_API_URL, { method:"POST", body: JSON.stringify(payload) })
+    .then(r=>r.json())
+    .catch(err=>{ console.warn("ບໍ່ສາມາດຕິດຕໍ່ Google Sheet backend ໄດ້", err); return null; });
+}
+function fetchOrdersListFromApi(){
+  const url = ORDERS_API_URL + (ORDERS_API_URL.includes("?") ? "&" : "?") + "action=list";
+  return fetch(url).then(r=>r.json()).catch(err=>{ console.warn("ດຶງລາຍການຄຳສັ່ງຊື້ຈາກ Google Sheet ບໍ່ສຳເລັດ", err); return null; });
+}
+function syncOrdersFromApi(){
+  if(!ORDERS_API_URL || ORDERS_SYNCING) return;
+  ORDERS_SYNCING = true;
+  fetchOrdersListFromApi().then(res=>{
+    ORDERS_SYNCING = false;
+    if(res && res.ok && Array.isArray(res.orders)){
+      ORDERS = res.orders;
+      persistOrders();
+      renderOrdersPage();
+      renderDashboard();
+      showToast("ອັບເດດຄຳສັ່ງຊື້ຈາກ Google Sheet ແລ້ວ");
+    }else{
+      showToast("ດຶງຂໍ້ມູນຈາກ Google Sheet ບໍ່ສຳເລັດ, ສະແດງຂໍ້ມູນທີ່ບັນທຶກໄວ້ໃນເຄື່ອງນີ້ແທນ", true);
+    }
+  });
 }
 
 /* ---------------- DATA: SETTINGS ---------------- */
@@ -745,8 +802,18 @@ function addCategoryInline(){
 }
 
 /* ---------------- ORDERS PAGE ---------------- */
+function reloadOrders(){
+  if(ORDERS_API_URL){ syncOrdersFromApi(); }
+  else { loadOrders(); renderOrdersPage(); showToast("ໂຫລດຄືນໃໝ່ແລ້ວ"); }
+}
 function renderOrdersPage(){
-  loadOrders();
+  if(!ORDERS_API_URL) loadOrders(); // ໂໝດ Google Sheet: ORDERS ຖືກອັບເດດໂດຍ syncOrdersFromApi() ແລ້ວ
+  const modeNote = document.getElementById("ordersModeNote");
+  if(modeNote){
+    modeNote.textContent = ORDERS_API_URL
+      ? "✅ ຂໍ້ມູນຄຳສັ່ງຊື້ນີ້ດຶງມາຈາກ Google Sheet ຂອງຮ້ານ — ເຫັນຄຳສັ່ງຊື້ຂອງລູກຄ້າຈາກທຸກເຄື່ອງ"
+      : "⚠️ ຂໍ້ມູນຄຳສັ່ງຊື້ນີ້ບັນທຶກຢູ່ໃນ browser ຂອງເຄື່ອງນີ້ເທົ່ານັ້ນ (ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Google Sheet — ເບິ່ງໜ້າ \"ເຊື່ອມຕໍ່ຮ້ານ\")";
+  }
   const filterVal = document.getElementById("orderStatusFilter").value;
   let list = [...ORDERS];
   const indices = list.map((_,i)=>i);
@@ -778,11 +845,19 @@ function renderOrdersPage(){
 function updateOrderStatus(idx, status){
   ORDERS[idx].status = status;
   persistOrders();
-  showToast("ອັບເດດສະຖານະຄຳສັ່ງຊື້ແລ້ວ");
   renderDashboard();
+  if(ORDERS_API_URL){
+    callOrdersApi({ action:"updateStatus", code: ORDERS[idx].code, status }).then(res=>{
+      if(!res || !res.ok) showToast("ອັບເດດສະຖານະໃນ Google Sheet ບໍ່ສຳເລັດ, ລອງໃໝ່ອີກຄັ້ງ", true);
+    });
+  }
+  showToast("ອັບເດດສະຖານະຄຳສັ່ງຊື້ແລ້ວ");
 }
 function deleteOrder(idx){
-  if(!confirm("ຢືນຢັນລຶບຄຳສັ່ງຊື້ນີ້ບໍ?")) return;
+  const msg = ORDERS_API_URL
+    ? "ການລຶບນີ້ຈະລຶບອອກສະເພາະໃນໜ້າຈໍນີ້ຊົ່ວຄາວ — ແຖວຂໍ້ມູນໃນ Google Sheet ຈິງຈະຍັງຄົງຢູ່ (ລຶບໄດ້ໂດຍກົງໃນ Google Sheet). ຢືນຢັນບໍ?"
+    : "ຢືນຢັນລຶບຄຳສັ່ງຊື້ນີ້ບໍ?";
+  if(!confirm(msg)) return;
   ORDERS.splice(idx,1);
   persistOrders();
   renderOrdersPage();

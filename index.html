@@ -336,7 +336,7 @@
       </div>
     </div>
 
-    <div class="note">⚠️ ນີ້ເປັນ Prototype: ຄຳສັ່ງຊື້ຈະຖືກບັນທຶກໄວ້ໃນເຄື່ອງນີ້ (browser storage) ເພື່ອໃຫ້ທົດລອງລະບົບຕິດຕາມ ແລະ ໜ້າແອັດມິນ — ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບຊຳລະເງິນ/ຄັງຂໍ້ມູນຈິງ.</div>
+    <div class="note" id="orderModeNote">⚠️ ນີ້ເປັນ Prototype: ຄຳສັ່ງຊື້ຈະຖືກບັນທຶກໄວ້ໃນເຄື່ອງນີ້ (browser storage) ເພື່ອໃຫ້ທົດລອງລະບົບຕິດຕາມ ແລະ ໜ້າແອັດມິນ — ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ລະບົບຊຳລະເງິນ/ຄັງຂໍ້ມູນຈິງ.</div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeCheckout()">ຍົກເລີກ</button>
       <button class="btn-confirm" onclick="confirmOrder()">ຢືນຢັນສັ່ງຊື້</button>
@@ -392,6 +392,17 @@ const ORDERS_KEY       = "laobuild_orders_v1";
    Google Sheet → File → Share → Publish to web → CSV → ວາງລິ້ງໃສ່ນີ້:
    ========================================================= */
 const GOOGLE_SHEET_CSV_URL = ""; // <-- put your published Google Sheet CSV link here
+
+/* =========================================================
+   1b) ORDERS BACKEND — Google Apps Script Web App (ທາງເລືອກ)
+   ---------------------------------------------------------
+   ຖ້າວາງລິ້ງ Web App ຂອງ Google Apps Script ໄວ້ນີ້ (ເບິ່ງວິທີສ້າງ
+   ໃນໜ້າ "ເຊື່ອມຕໍ່ຮ້ານ" ຂອງ admin.html) ຄຳສັ່ງຊື້ຂອງລູກຄ້າ ແລະ
+   ການຕິດຕາມ ຈະຖືກສົ່ງ/ດຶງຈາກ Google Sheet ຈິງ — ເຮັດໃຫ້ລູກຄ້າ ແລະ
+   ແອັດມິນ ເຫັນຂໍ້ມູນດຽວກັນ ເຖິງວ່າຈະຄົນລະເຄື່ອງ/ຄົນລະ browser ກໍ່ຕາມ.
+   ຖ້າປະໄວ້ຫວ່າງ, ລະບົບຈະໃຊ້ browser storage ຂອງເຄື່ອງນີ້ (ຄືເດີມ).
+   ========================================================= */
+const ORDERS_API_URL = ""; // <-- put your Google Apps Script Web App /exec URL here
 
 const SAMPLE_PRODUCTS = [
   {id:"27976", code:"+27976 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-112)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:12, description:"ສີສູດນ້ຳສຳລັບທາເຫຼັກເປືອຍ ຄວາມເຄີ່ງເງົາ ທົນທານຕໍ່ສະພາບອາກາດ ແຫ້ງໄວ ບໍ່ມີກິ່ນສານລະລາຍແຮງ."},
@@ -721,6 +732,19 @@ function generateTrackingCode(){
   return "LB" + Date.now().toString(36).toUpperCase().slice(-5) + rand;
 }
 
+/* ---------------- ORDERS BACKEND (Google Sheet via Apps Script) ---------------- */
+function callOrdersApi(payload){
+  // ໃຊ້ body ແບບ string ທຳມະດາ (ບໍ່ຕັ້ງ header ເອງ) ເພື່ອຫຼີກລ່ຽງ CORS preflight
+  // ທີ່ Google Apps Script Web App ບໍ່ຮອງຮັບ.
+  return fetch(ORDERS_API_URL, { method: "POST", body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .catch(err => { console.warn("ບໍ່ສາມາດຕິດຕໍ່ Google Sheet backend ໄດ້", err); return null; });
+}
+function fetchOrderFromApi(code){
+  const url = ORDERS_API_URL + (ORDERS_API_URL.includes("?") ? "&" : "?") + "action=track&code=" + encodeURIComponent(code);
+  return fetch(url).then(r=>r.json()).catch(err=>{ console.warn("ດຶງຂໍ້ມູນຈາກ Google Sheet ບໍ່ສຳເລັດ", err); return null; });
+}
+
 function confirmOrder(){
   const name = document.getElementById("custName").value.trim();
   const phone = document.getElementById("custPhone").value.trim();
@@ -746,6 +770,10 @@ function confirmOrder(){
   try{ orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }catch(e){ orders = []; }
   orders.push(order);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+
+  if(ORDERS_API_URL){
+    callOrdersApi({ action:"newOrder", order }); // ສົ່ງໄປ Google Sheet ແບບ background, ບໍ່ລໍຖ້າຄຳຕອບ
+  }
 
   if(PRODUCTS_SOURCE === "local"){
     items.forEach(it=>{
@@ -796,6 +824,20 @@ function searchTrack(){
   const code = document.getElementById("trackCodeInput").value.trim().toUpperCase();
   const box = document.getElementById("trackResult");
   if(!code){ box.innerHTML = `<div class="note">ກະລຸນາປ້ອນລະຫັດຕິດຕາມ</div>`; return; }
+
+  box.innerHTML = `<div class="note">ກຳລັງຄົ້ນຫາ...</div>`;
+
+  if(ORDERS_API_URL){
+    fetchOrderFromApi(code).then(res=>{
+      if(res && res.ok && res.order){ renderTrackResult(res.order, box); return; }
+      // ບໍ່ພົບໃນ Google Sheet, ລອງຫາໃນ browser storage ຂອງເຄື່ອງນີ້
+      trackFromLocal(code, box);
+    });
+  }else{
+    trackFromLocal(code, box);
+  }
+}
+function trackFromLocal(code, box){
   let orders = [];
   try{ orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }catch(e){ orders = []; }
   const order = orders.find(o=>o.code.toUpperCase() === code);
@@ -803,7 +845,9 @@ function searchTrack(){
     box.innerHTML = `<div class="note">ບໍ່ພົບການສັ່ງຊື້ດ້ວຍລະຫັດນີ້ ກະລຸນາກວດສອບລະຫັດອີກຄັ້ງ.</div>`;
     return;
   }
-
+  renderTrackResult(order, box);
+}
+function renderTrackResult(order, box){
   if(order.status === "ຍົກເລີກ"){
     box.innerHTML = `
       <div class="note" style="border:1px solid var(--red); color:var(--red);">✕ ການສັ່ງຊື້ນີ້ຖືກຍົກເລີກແລ້ວ</div>
@@ -837,6 +881,10 @@ function renderOrderBox(order){
   `;
 }
 
+if(ORDERS_API_URL){
+  const n = document.getElementById("orderModeNote");
+  if(n) n.textContent = "✅ ຄຳສັ່ງຊື້ຈະຖືກສົ່ງໄປບັນທຶກໃນ Google Sheet ຂອງຮ້ານ — ແອັດມິນສາມາດເຫັນ ແລະ ອັບເດດສະຖານະໄດ້ຈາກທຸກເຄື່ອງ.";
+}
 loadProducts();
 </script>
 </body>
