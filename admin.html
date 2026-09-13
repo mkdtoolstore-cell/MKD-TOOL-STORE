@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LaoBuild Admin — ຈັດການສິນຄ້າ</title>
+<title>LaoBuild Admin — ຈັດການຮ້ານ</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root{
@@ -61,7 +61,7 @@
   .sidebar{
     background:var(--panel); border-right:1px solid var(--line);
     padding:20px 14px; display:flex; flex-direction:column; gap:4px;
-    position:sticky; top:0; height:100vh;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
   }
   .sidebar .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; padding:0 8px 20px;}
   .sidebar .brand .mark{
@@ -90,7 +90,7 @@
   .page-head h1{margin:0; font-size:22px;}
   .page-head p{margin:4px 0 0; color:var(--text-dim); font-size:13px;}
 
-  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px;}
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; margin-bottom:26px;}
   .stat-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px;}
   .stat-card .num{font-size:26px; font-weight:800;}
   .stat-card .label{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
@@ -128,7 +128,7 @@
   .stock-badge.in{color:var(--green);}
   .stock-badge.out{color:var(--red);}
   .row-actions{display:flex; gap:6px;}
-  .icon-action{background:var(--panel-2); border:1px solid var(--line); border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--text);}
+  .icon-action{background:var(--panel-2); border:1px solid var(--line); border-radius:6px; min-width:30px; height:30px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; color:var(--text); gap:4px; font-size:12.5px;}
   .icon-action:hover{border-color:var(--orange); color:var(--orange);}
   .empty-row{text-align:center; color:var(--text-dim); padding:36px 0;}
 
@@ -143,16 +143,20 @@
   .field input, .field select, .field textarea{
     background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:9px 10px; color:var(--text); font-size:14px;
   }
-  .field .toggle-row{display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:9px 10px;}
+  .cat-select-row{display:flex; gap:8px;}
+  .cat-select-row select{flex:1;}
+  .cat-add-btn{width:38px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; color:var(--orange); font-size:16px; font-weight:800;}
   .modal-actions{display:flex; gap:10px; margin-top:8px;}
   .modal-actions button{flex:1; padding:11px; border-radius:8px; border:none; font-weight:700;}
   .img-preview{width:56px; height:56px; border-radius:8px; object-fit:contain; background:#fff; border:1px solid var(--line);}
+  .slip-upload-btn{display:block; text-align:center; border:1px dashed var(--line); border-radius:8px; padding:9px; font-size:12.5px; color:var(--text-dim); cursor:pointer;}
+  .slip-upload-btn:hover{border-color:var(--orange); color:var(--orange);}
 
   .note{font-size:12px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:10px; line-height:1.55;}
   .toast{
     position:fixed; bottom:20px; right:20px; background:var(--panel); border:1px solid var(--line);
     border-left:4px solid var(--green); border-radius:8px; padding:12px 16px; font-size:13.5px;
-    box-shadow:0 6px 20px rgba(0,0,0,.4); z-index:80; display:none;
+    box-shadow:0 6px 20px rgba(0,0,0,.4); z-index:80; display:none; max-width:320px;
   }
   .toast.show{display:block;}
   .toast.err{border-left-color:var(--red);}
@@ -168,10 +172,10 @@
     .sidebar{position:static; height:auto; flex-direction:row; overflow-x:auto;}
     .sidebar .brand{display:none;}
     .sidebar-foot{margin-top:0;}
-    .stat-row{grid-template-columns:repeat(2,1fr);}
     main{padding:18px 16px;}
     table{font-size:12.5px;}
     .prod-cell .name{max-width:150px;}
+    .field.row2{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -182,13 +186,13 @@
   <div class="login-box">
     <div class="mark">🔒</div>
     <h2>LaoBuild Admin</h2>
-    <p>ປ້ອນລະຫັດຜ່ານເພື່ອເຂົ້າຈັດການສິນຄ້າ</p>
+    <p>ປ້ອນລະຫັດຜ່ານເພື່ອເຂົ້າຈັດການຮ້ານ</p>
     <div class="login-err" id="loginErr"></div>
     <input type="password" id="pwInput" placeholder="ລະຫັດຜ່ານ" onkeydown="if(event.key==='Enter')tryLogin()">
     <button class="btn-primary" onclick="tryLogin()" style="border-radius:8px;">ເຂົ້າສູ່ລະບົບ</button>
     <div class="login-note">
-      🔑 ລະຫັດຜ່ານເລີ່ມຕົ້ນ: <strong>admin1234</strong> (ສາມາດປ່ຽນໄດ້ໃນໜ້າ "ຕັ້ງຄ່າ" ຫຼັງເຂົ້າສູ່ລະບົບ).<br>
-      ⚠️ ໜ້ານີ້ເປັນການປ້ອງກັນແບບເບື້ອງຕົ້ນ (ຝັ່ງໜ້າຈໍເທົ່ານັ້ນ) ເໝາະສຳລັບຕົວຢ່າງ/ໃຊ້ພາຍໃນ. ຫາກຕ້ອງການຄວາມປອດໄພຈິງ ຄວນເຊື່ອມຕໍ່ລະບົບ login ຝັ່ງ server.
+      🔑 ລະຫັດຜ່ານເລີ່ມຕົ້ນ: <strong>admin1234</strong> (ປ່ຽນໄດ້ໃນໜ້າ "ຕັ້ງຄ່າ" ຫຼັງເຂົ້າສູ່ລະບົບ).<br>
+      ⚠️ ການປ້ອງກັນນີ້ເປັນແບບເບື້ອງຕົ້ນ (ຝັ່ງໜ້າຈໍເທົ່ານັ້ນ) ເໝາະສຳລັບຕົວຢ່າງ/ໃຊ້ພາຍໃນ.
     </div>
   </div>
 </div>
@@ -199,6 +203,8 @@
     <div class="brand"><span class="mark">🧱</span> LaoBuild</div>
     <button class="nav-item active" data-page="dashboard" onclick="goPage('dashboard')">📊 ພາບລວມ</button>
     <button class="nav-item" data-page="products" onclick="goPage('products')">📦 ສິນຄ້າ</button>
+    <button class="nav-item" data-page="categories" onclick="goPage('categories')">🗂 ໝວດໝູ່ສິນຄ້າ</button>
+    <button class="nav-item" data-page="orders" onclick="goPage('orders')">🧾 ຄຳສັ່ງຊື້</button>
     <button class="nav-item" data-page="sync" onclick="goPage('sync')">🔗 ເຊື່ອມຕໍ່ຮ້ານ</button>
     <button class="nav-item" data-page="settings" onclick="goPage('settings')">⚙️ ຕັ້ງຄ່າ</button>
     <div class="sidebar-foot">
@@ -212,7 +218,7 @@
       <div class="page-head">
         <div>
           <h1>ພາບລວມຮ້ານ</h1>
-          <p>ສະຫຼຸບຂໍ້ມູນສິນຄ້າຂອງ LaoBuild ໃນປັດຈຸບັນ</p>
+          <p>ສະຫຼຸບຂໍ້ມູນສິນຄ້າ ແລະ ຄຳສັ່ງຊື້ຂອງ LaoBuild ໃນປັດຈຸບັນ</p>
         </div>
         <button class="btn btn-primary" onclick="goPage('products'); openProductModal();">+ ເພີ່ມສິນຄ້າໃໝ່</button>
       </div>
@@ -222,6 +228,8 @@
         <div class="stat-card green"><div class="num" id="statIn">0</div><div class="label">ມີສິນຄ້າ</div></div>
         <div class="stat-card red"><div class="num" id="statOut">0</div><div class="label">ສິນຄ້າໝົດ</div></div>
         <div class="stat-card orange"><div class="num" id="statCats">0</div><div class="label">ໝວດໝູ່</div></div>
+        <div class="stat-card"><div class="num" id="statOrders">0</div><div class="label">ຄຳສັ່ງຊື້ທັງໝົດ</div></div>
+        <div class="stat-card orange"><div class="num" id="statPending">0</div><div class="label">ລໍຖ້າກວດສອບ</div></div>
       </div>
 
       <div class="panel">
@@ -238,7 +246,7 @@
       <div class="page-head">
         <div>
           <h1>ຈັດການສິນຄ້າ</h1>
-          <p>ເພີ່ມ, ແກ້ໄຂ, ຫຼືລຶບສິນຄ້າ — ການປ່ຽນແປງຈະບັນທຶກໄວ້ໃນເຄື່ອງນີ້ທັນທີ</p>
+          <p>ເພີ່ມ, ແກ້ໄຂ, ຫຼືລຶບສິນຄ້າ — ການປ່ຽນແປງຈະບັນທຶກໄວ້ໃນເຄື່ອງນີ້ທັນທີ ແລະ ສະແດງຢູ່ໜ້າຮ້ານທັນທີ</p>
         </div>
         <button class="btn btn-primary" onclick="openProductModal()">+ ເພີ່ມສິນຄ້າໃໝ່</button>
       </div>
@@ -255,9 +263,56 @@
         </div>
         <table>
           <thead>
-            <tr><th>ສິນຄ້າ</th><th>ໝວດໝູ່</th><th>ລາຄາ</th><th>ສະຖານະ</th><th></th></tr>
+            <tr><th>ສິນຄ້າ</th><th>ໝວດໝູ່</th><th>ລາຄາ</th><th>ຈຳນວນໃນສະຕ໊ອກ</th><th></th></tr>
           </thead>
           <tbody id="productTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ CATEGORIES ============ -->
+    <section class="page" id="page-categories">
+      <div class="page-head">
+        <div>
+          <h1>ໝວດໝູ່ສິນຄ້າ</h1>
+          <p>ເພີ່ມ, ປ່ຽນຊື່ ຫຼືລຶບໝວດໝູ່ — ໃຊ້ຮ່ວມກັບແບບຟອມເພີ່ມສິນຄ້າ ແລະ ໜ້າຮ້ານ</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="toolbar">
+          <input type="text" id="newCatInput" placeholder="ຊື່ໝວດໝູ່ໃໝ່..." onkeydown="if(event.key==='Enter')addCategory()">
+          <button class="btn btn-primary" onclick="addCategory()">+ ເພີ່ມໝວດໝູ່</button>
+        </div>
+        <table>
+          <thead><tr><th>ໝວດໝູ່</th><th>ຈຳນວນສິນຄ້າ</th><th></th></tr></thead>
+          <tbody id="categoryTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ ORDERS ============ -->
+    <section class="page" id="page-orders">
+      <div class="page-head">
+        <div>
+          <h1>ຄຳສັ່ງຊື້</h1>
+          <p>ກວດສອບການຊຳລະ, ເບິ່ງຮູບສະລິບ ແລະ ອັບເດດສະຖານະການສັ່ງຊື້ — ລູກຄ້າຈະເຫັນສະຖານະຜ່ານໜ້າ "ຕິດຕາມການສັ່ງຊື້"</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="toolbar">
+          <select id="orderStatusFilter" onchange="renderOrdersPage()">
+            <option value="">ທຸກສະຖານະ</option>
+            <option value="ລໍຖ້າກວດສອບ">ລໍຖ້າກວດສອບ</option>
+            <option value="ຢືນຢັນແລ້ວ">ຢືນຢັນແລ້ວ</option>
+            <option value="ກຳລັງຈັດສົ່ງ">ກຳລັງຈັດສົ່ງ</option>
+            <option value="ສຳເລັດ">ສຳເລັດ</option>
+            <option value="ຍົກເລີກ">ຍົກເລີກ</option>
+          </select>
+          <button class="btn btn-ghost" onclick="renderOrdersPage()">🔄 ໂຫລດຄືນໃໝ່</button>
+        </div>
+        <table>
+          <thead><tr><th>ລະຫັດ / ວັນທີ</th><th>ລູກຄ້າ</th><th>ການຊຳລະ</th><th>ຍອດລວມ</th><th>ສະຖານະ</th><th></th></tr></thead>
+          <tbody id="ordersTableBody"></tbody>
         </table>
       </div>
     </section>
@@ -267,13 +322,24 @@
       <div class="page-head">
         <div>
           <h1>ເຊື່ອມຕໍ່ກັບໜ້າຮ້ານ</h1>
-          <p>ໜ້າຮ້ານ (index.html) ດຶງຂໍ້ມູນຈາກ Google Sheet CSV ຫຼືອາເຣ SAMPLE_PRODUCTS ພາຍໃນໄຟລ໌</p>
+          <p>ວິທີເຊື່ອມຕໍ່ຂໍ້ມູນລະຫວ່າງໜ້າແອັດມິນ ແລະ ໜ້າຮ້ານ index.html</p>
         </div>
       </div>
 
       <div class="panel">
-        <h3>① ວິທີທີ 1 — ສົ່ງອອກເປັນ CSV ໄປ Google Sheet</h3>
-        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ດາວໂຫລດ CSV ຈາກປຸ່ມລຸ່ມນີ້ ແລ້ວນຳໄປວາງໃສ່ Google Sheet ຂອງທ່ານ (ຫຼືອັບໂຫລດແທນຂອງເກົ່າ) ຈາກນັ້ນ Publish to web ເປັນ CSV ແລ້ວນຳລິ້ງໄປໃສ່ໃນຕົວແປ <code>GOOGLE_SHEET_CSV_URL</code> ໃນໄຟລ໌ index.html</p>
+        <h3>✅ ວິທີຫຼັກ — ໃຊ້ຮ່ວມກັນອັດຕະໂນມັດ (ແນະນຳ)</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px; line-height:1.6;">
+          ຖ້າເປີດ <strong>admin.html</strong> ແລະ <strong>index.html</strong> ຈາກເວັບໄຊດຽວກັນ (domain/origin ດຽວກັນ) ດ້ວຍ browser ດຽວກັນ —
+          ສິນຄ້າ, ໝວດໝູ່, ການຕັ້ງຄ່າ ແລະ ຄຳສັ່ງຊື້ ຈະຖືກອັບເດດແບບ real-time ໂດຍອັດຕະໂນມັດຜ່ານ browser storage, ບໍ່ຕ້ອງເຮັດຫຍັງເພີ່ມ.
+          <br><br>
+          ⚠️ ຂໍ້ຈຳກັດ: ຂໍ້ມູນນີ້ຢູ່ໃນ browser ຂອງເຄື່ອງ/ຄົນນັ້ນເທົ່ານັ້ນ — ຖ້າລູກຄ້າເປີດຈາກຄົນລະເຄື່ອງ ຫຼືລ້າງ browser data ຈະບໍ່ເຫັນຂໍ້ມູນດຽວກັນ.
+          ສຳລັບຮ້ານທີ່ໃຊ້ຈິງຫຼາຍຄົນພ້ອມກັນ ຄວນເຊື່ອມຕໍ່ backend/ຖານຂໍ້ມູນຈິງ.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3>① ວິທີສຳຮອງ — ສົ່ງອອກເປັນ CSV ໄປ Google Sheet</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ໃຊ້ວິທີນີ້ຖ້າຕ້ອງການໃຫ້ຫຼາຍຄົນອັບເດດສິນຄ້າຜ່ານ Google Sheet ແທນ. ດາວໂຫລດ CSV ແລ້ວນຳໄປວາງໃສ່ Google Sheet, Publish to web ເປັນ CSV ແລ້ວນຳລິ້ງໄປໃສ່ໃນຕົວແປ <code>GOOGLE_SHEET_CSV_URL</code> ໃນໄຟລ໌ index.html</p>
         <div class="toolbar" style="margin-bottom:0;">
           <button class="btn btn-primary" onclick="exportCSV()">⬇ ດາວໂຫລດ products.csv</button>
           <button class="btn btn-ghost" onclick="document.getElementById('csvImportInput').click()">⬆ ນຳເຂົ້າ CSV</button>
@@ -282,38 +348,58 @@
       </div>
 
       <div class="panel">
-        <h3>② ວິທີທີ 2 — ວາງລົງໄຟລ໌ index.html ໂດຍກົງ (ບໍ່ຕ້ອງໃຊ້ Google Sheet)</h3>
-        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ກັອບປີ້ໂຄ້ດລຸ່ມນີ້ ແລ້ວນຳໄປແທນທີ່ຕົວແປ <code>SAMPLE_PRODUCTS</code> ໃນໄຟລ໌ index.html (ໃນ &lt;script&gt; ດ້ານລຸ່ມ)</p>
+        <h3>② ວິທີສຳຮອງ — ວາງລົງໄຟລ໌ index.html ໂດຍກົງ</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ກັອບປີ້ໂຄ້ດລຸ່ມນີ້ ແລ້ວນຳໄປແທນທີ່ຕົວແປ <code>SAMPLE_PRODUCTS</code> ໃນໄຟລ໌ index.html</p>
         <div class="toolbar" style="margin-bottom:10px;">
           <button class="btn btn-ghost" onclick="copyJSArray()">📋 ກັອບປີ້ໂຄ້ດ</button>
         </div>
         <pre id="jsArrayOutput"></pre>
-      </div>
-
-      <div class="panel">
-        <h3>③ ຄິວອາ (QR) ຮັບເງິນຂອງຮ້ານ</h3>
-        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ຮູບ QR ນີ້ຈະສະແດງໃນໜ້າຮ້ານເມື່ອລູກຄ້າເລືອກຊຳລະແບບໂອນທະນາຄານ ຫຼື QR / Mobile Banking</p>
-        <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
-          <img id="qrPreviewImg" class="img-preview" style="width:90px;height:90px;" src="https://placehold.co/100x100/222/fff?text=QR">
-          <div style="flex:1; min-width:220px;">
-            <div class="field"><label>ລິ້ງ URL ຮູບ QR</label><input id="qrUrlInput" placeholder="https://..." oninput="onQrUrlInput()"></div>
-            <label class="slip-upload-btn" for="qrFileInput" style="display:block; text-align:center; border:1px dashed var(--line); border-radius:8px; padding:9px; font-size:12.5px; color:var(--text-dim); cursor:pointer; margin-bottom:10px;">📁 ຫຼືອັບໂຫລດຮູບ QR ຈາກເຄື່ອງ</label>
-            <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="onQrFile(event)">
-            <div style="font-size:11px; color:var(--text-dim); margin:-4px 0 10px;">💡 ຄວນໃຊ້ຮູບຂະໜາດນ້ອຍ (ບໍ່ເກີນ ~1MB)</div>
-            <div class="toolbar" style="margin-bottom:0;">
-              <button class="btn btn-primary" onclick="saveQr()">💾 ບັນທຶກ QR</button>
-              <button class="btn btn-ghost" onclick="copyQrCode()">📋 ກັອບປີ້ໂຄ້ດ ສຳລັບ index.html</button>
-            </div>
-          </div>
-        </div>
-        <pre id="qrCodeOutput" style="margin-top:14px;"></pre>
       </div>
     </section>
 
     <!-- ============ SETTINGS ============ -->
     <section class="page" id="page-settings">
       <div class="page-head">
-        <div><h1>ຕັ້ງຄ່າ</h1><p>ຈັດການລະຫັດຜ່ານ ແລະ ຂໍ້ມູນຂອງແອັດມິນ</p></div>
+        <div><h1>ຕັ້ງຄ່າ</h1><p>ຈັດການລະຫັດຜ່ານ, ຊ່ອງທາງຕິດຕໍ່ ແລະ QR ຮັບເງິນຂອງຮ້ານ</p></div>
+      </div>
+
+      <div class="panel">
+        <h3>ປຸ່ມ "ຕິດຕໍ່ສອບຖາມ" ໃນໜ້າຮ້ານ</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ປຸ່ມນີ້ຈະທົດແທນ "ດາວໂຫລດແອັບ" ເດີມ ແລະ ເປີດແອັບແຊັດຫາຮ້ານໂດຍກົງເມື່ອລູກຄ້າກົດ</p>
+        <div class="field"><label>ຂໍ້ຄວາມປຸ່ມ</label><input id="contactLabelInput" placeholder="ຕິດຕໍ່ສອບຖາມ"></div>
+        <div class="field row2">
+          <div>
+            <label>ຊ່ອງທາງ</label>
+            <select id="contactPlatformSelect" onchange="onContactPlatformChange()">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="messenger">Facebook Messenger</option>
+              <option value="telegram">Telegram</option>
+              <option value="line">Line</option>
+              <option value="phone">ໂທຫາໂດຍກົງ</option>
+              <option value="custom">ລິ້ງອື່ນໆ (ກຳນົດເອງ)</option>
+            </select>
+          </div>
+          <div>
+            <label id="contactValueLabel">ເບີໂທ (WhatsApp)</label>
+            <input id="contactValueInput" placeholder="020 9883 2516">
+          </div>
+        </div>
+        <div class="note" id="contactPreviewNote">ລິ້ງທີ່ຈະໃຊ້: —</div>
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="saveContactSettings()">ບັນທຶກການຕັ້ງຄ່າຕິດຕໍ່</button>
+      </div>
+
+      <div class="panel">
+        <h3>ຄິວອາ (QR) ຮັບເງິນຂອງຮ້ານ</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin-top:-6px;">ຮູບ QR ນີ້ຈະສະແດງໃນໜ້າຊຳລະເງິນຂອງລູກຄ້າ ເມື່ອເລືອກໂອນຜ່ານທະນາຄານ ຫຼື QR/Mobile Banking</p>
+        <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+          <img id="qrPreviewImg" class="img-preview" style="width:90px;height:90px;" src="https://placehold.co/100x100/222/fff?text=QR">
+          <div style="flex:1; min-width:220px;">
+            <label class="slip-upload-btn" for="qrFileInput">📁 ອັບໂຫລດຮູບ QR ຈາກເຄື່ອງ</label>
+            <input type="file" id="qrFileInput" accept="image/*" onchange="onQrFile(event)">
+            <div style="font-size:11px; color:var(--text-dim); margin:6px 0 10px;">💡 ຄວນໃຊ້ຮູບຂະໜາດນ້ອຍ (ບໍ່ເກີນ ~1MB)</div>
+            <button class="btn btn-primary" onclick="saveQr()">💾 ບັນທຶກ QR</button>
+          </div>
+        </div>
       </div>
 
       <div class="panel">
@@ -341,14 +427,17 @@
       <div><label>ID (ບໍ່ຊ້ຳກັນ)</label><input id="f_id" placeholder="ຫາກປະໄວ້ວ່າງ ຈະສ້າງໃຫ້ອັດຕະໂນມັດ"></div>
     </div>
     <div class="field"><label>ຊື່ສິນຄ້າ</label><textarea id="f_name" rows="2" placeholder="ຊື່ສິນຄ້າເຕັມ"></textarea></div>
+    <div class="field"><label>ລາຍລະອຽດສິນຄ້າ (ສະແດງໃນໜ້າຮ້ານເມື່ອລູກຄ້າກົດເບິ່ງລາຍລະອຽດ)</label><textarea id="f_description" rows="3" placeholder="ອະທິບາຍຄຸນສົມບັດ, ວິທີໃຊ້, ຂະໜາດ ຫຼືຂໍ້ມູນອື່ນໆ..."></textarea></div>
     <div class="field row2">
       <div><label>ລາຄາ (ກີບ)</label><input id="f_price" type="number" min="0" placeholder="358427"></div>
-      <div><label>ໝວດໝູ່</label><input id="f_category" list="catList" placeholder="ສີ ແລະ ອຸປະກອນທາສີ"></div>
+      <div><label>ຈຳນວນໃນສະຕ໊ອກ</label><input id="f_qty" type="number" min="0" placeholder="0"></div>
     </div>
-    <datalist id="catList"></datalist>
     <div class="field">
-      <label>ລາຍລະອຽດສິນຄ້າ (ສະແດງເມື່ອລູກຄ້າກົດເບິ່ງສິນຄ້າ)</label>
-      <textarea id="f_description" rows="4" placeholder="ອະທິບາຍລາຍລະອຽດ, ຄຸນສົມບັດ, ວິທີໃຊ້ ຫຼືຂໍ້ມູນອື່ນໆ ຂອງສິນຄ້ານີ້..."></textarea>
+      <label>ໝວດໝູ່</label>
+      <div class="cat-select-row">
+        <select id="f_category"></select>
+        <button type="button" class="cat-add-btn" onclick="addCategoryInline()" title="ເພີ່ມໝວດໝູ່ໃໝ່">+</button>
+      </div>
     </div>
     <div class="field">
       <label>ຮູບພາບສິນຄ້າ</label>
@@ -356,16 +445,9 @@
         <img id="f_imgPreview" class="img-preview" src="https://placehold.co/100x100/222/fff?text=?" onerror="this.src='https://placehold.co/100x100/222/fff?text=No+Image'">
         <input id="f_image" style="flex:1;" placeholder="ວາງລິ້ງ URL ຮູບພາບ..." oninput="document.getElementById('f_imgPreview').src=this.value||'https://placehold.co/100x100/222/fff?text=?'">
       </div>
-      <label class="slip-upload-btn" for="f_imageFile" style="display:block; text-align:center; border:1px dashed var(--line); border-radius:8px; padding:9px; font-size:12.5px; color:var(--text-dim); cursor:pointer;">📁 ຫຼືອັບໂຫລດຮູບຈາກເຄື່ອງ (ບໍ່ຕ້ອງມີລິ້ງ)</label>
-      <input type="file" id="f_imageFile" accept="image/*" style="display:none;" onchange="onProductImageFile(event)">
-      <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">💡 ຮູບທີ່ອັບໂຫລດຈະຖືກເກັບໄວ້ໃນເຄື່ອງນີ້ໂດຍກົງ, ຄວນໃຊ້ຮູບຂະໜາດນ້ອຍ (ບໍ່ເກີນ ~1MB) ເພື່ອບໍ່ໃຫ້ຂໍ້ມູນເຕັມ</div>
-    </div>
-    <div class="field">
-      <label>ສະຖານະສິນຄ້າ</label>
-      <div class="toggle-row">
-        <input type="checkbox" id="f_stock" checked style="accent-color:var(--orange); width:16px; height:16px;">
-        <span>ມີສິນຄ້າ (ຕິກອອກຫາກສິນຄ້າໝົດ)</span>
-      </div>
+      <label class="slip-upload-btn" for="f_imageFile">📁 ຫຼືເລືອກຮູບຈາກເຄື່ອງຂອງທ່ານ</label>
+      <input type="file" id="f_imageFile" accept="image/*" onchange="onProductImageFile(event)">
+      <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">💡 ຮູບທີ່ອັບໂຫລດຈະຖືກເກັບໄວ້ໃນເຄື່ອງນີ້ໂດຍກົງ (ບໍ່ຕ້ອງມີລິ້ງ)</div>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeProductModal()">ຍົກເລີກ</button>
@@ -374,35 +456,49 @@
   </div>
 </div>
 
+<!-- ================= SLIP VIEW MODAL ================= -->
+<div class="modal" id="slipViewModal">
+  <div class="modal-box" style="text-align:center;">
+    <h3>ຮູບສະລິບການໂອນເງິນ</h3>
+    <img id="slipViewImg" src="" style="width:100%; border-radius:10px; margin-bottom:14px;">
+    <button class="btn-ghost" style="width:100%; padding:10px; border-radius:8px;" onclick="document.getElementById('slipViewModal').classList.remove('show')">ປິດ</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* =========================================================
-   LaoBuild Admin — ຈັດການສິນຄ້າ (client-side, localStorage)
-   ຂໍ້ມູນຖືກເກັບໄວ້ໃນ browser ຂອງເຄື່ອງນີ້ເທົ່ານັ້ນ (localStorage)
-   ໃຊ້ "ເຊື່ອມຕໍ່ຮ້ານ" ເພື່ອສົ່ງອອກ CSV ຫຼືໂຄ້ດ JS ໄປໃສ່ໜ້າຮ້ານ index.html
+   LaoBuild Admin — ຈັດການຮ້ານ (client-side, localStorage)
+   ຂໍ້ມູນຖືກເກັບໄວ້ໃນ browser ນີ້ ແລະ ໃຊ້ຮ່ວມກັບ index.html
+   ໄດ້ອັດຕະໂນມັດ ຖ້າເປີດຈາກເວັບໄຊ/ໂດເມນດຽວກັນ
    ========================================================= */
 
-const STORAGE_KEY = "laobuild_products_v1";
+const STORAGE_KEY   = "laobuild_products_v1";
+const CATEGORIES_KEY = "laobuild_categories_v1";
+const SETTINGS_KEY   = "laobuild_settings_v1";
+const ORDERS_KEY     = "laobuild_orders_v1";
 const PW_KEY = "laobuild_admin_pw";
 const AUTH_KEY = "laobuild_admin_auth";
 const DEFAULT_PW = "admin1234";
-const QR_KEY = "laobuild_store_qr";
 const DEFAULT_QR = "https://placehold.co/300x300/ffffff/222?text=Store+QR";
 
 const SAMPLE_PRODUCTS = [
-  {id:"27976", code:"+27976 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-112)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:true, description:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ຄຸນນະພາບສູງ ຄວາມເຄີ່ງເງົາ ໃຫ້ຄວາມທົນທານຕໍ່ຮອຍຂູດຂີດ ແລະ ສະພາບອາກາດ."},
-  {id:"27735", code:"+27735 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-115)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:false, description:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ຄວາມເຄີ່ງເງົາ ໂທນສີ LR-115 ແຫ້ງໄວ."},
-  {id:"24473", code:"+24473 (5Z)", name:"ສີຮອງພື້ນ ປູນເກົ່າ ແລະ ປູນໃໝ່ ຜາຍນອກ-ໃນ (#1000)", price:2254789, image:"https://placehold.co/300x300/e6533f/fff?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:true, description:"ສີຮອງພື້ນສຳລັບປູນເກົ່າ ແລະ ປູນໃໝ່ ໃຊ້ໄດ້ທັງພາຍໃນ ແລະ ພາຍນອກ."},
-  {id:"22129", code:"+22129 (3Z)", name:"ທິນເນີ ປະສົມແລກເກີ (No.R71) (1/4GL) TOA", price:121136, image:"https://placehold.co/300x300/1c1c1f/f2f0ec?text=Thinner", category:"ສີ ແລະ ອຸປະກອນທາສີ", stock:true, description:"ທິນເນີສຳລັບປະສົມແລກເກີ ຮຸ້ນ No.R71 ຂະໜາດ 1/4 ແກລອນ ຈາກ TOA."},
-  {id:"67011", code:"+67011", name:"ດອກໄຟດອກປ້ອມ ແອວຈິດ (E27) ແສງຂາວ (6500K)", price:44174, image:"https://placehold.co/300x300/ffffff/222?text=LED", category:"ອຸປະກອນໄຟຟ້າ", stock:true, description:"ດອກໄຟ LED ຂົ້ວ E27 ແສງຂາວ 6500K ປະຢັດພະລັງງານ."},
-  {id:"67851", code:"+67851", name:"ປຕູນ້ຳ ເປີດ-ປິດ ແບບ 2ທາງ (ສະແຕນເລດ 304) ຮຸ້ນ SY01", price:155015, image:"https://placehold.co/300x300/ffffff/222?text=Valve", category:"ອຸປະກອນປະປາ", stock:true, description:"ປະຕູນ້ຳແບບ 2 ທາງ ຜະລິດຈາກສະແຕນເລດເບີ 304 ທົນຕໍ່ສະໜິມ."},
-  {id:"58951", code:"+58951 (1Z)", name:"ຊີມັງກາວ ເວເບີ ໄທເຊບ ສຳລັບກະເບື້ອງ", price:108599, image:"https://placehold.co/300x300/ffe14d/222?text=Weber", category:"ວັດສະດຸກໍ່ສ້າງ", stock:true, description:"ຊີມັງກາວສຳລັບຕິດຕັ້ງກະເບື້ອງ ຈາກ Weber ຮຸ້ນ ໄທເຊບ."},
-  {id:"43196", code:"+43196", name:"ກ໊ອກສະໜາມ (ຂາຕັ້ງ) ຫົວທອງເຫຼືອງ ຫົວຟ້າ", price:80502, image:"https://placehold.co/300x300/ffffff/222?text=Faucet", category:"ອຸປະກອນປະປາ", stock:true, description:"ກ໊ອກນ້ຳສະໜາມແບບຂາຕັ້ງ ຫົວທອງເຫຼືອງແທ້ ໃຫ້ຄວາມທົນທານສູງ."},
-  {id:"34248", code:"+34248", name:"ບອບອາວ ສີຝາ (18mm) (150ອັນ/ຖົງ) SCG", price:30546, image:"https://placehold.co/300x300/ffffff/222?text=Screw", category:"ຮາດແວ ແລະ ເຄື່ອງມືຊ່າງ", stock:true, description:"ບອບອາວສີຝາ ຂະໜາດ 18mm ບັນຈຸ 150 ອັນຕໍ່ຖົງ ຈາກ SCG."},
+  {id:"27976", code:"+27976 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-112)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:12, description:"ສີສູດນ້ຳສຳລັບທາເຫຼັກເປືອຍ ຄວາມເຄີ່ງເງົາ ທົນທານຕໍ່ສະພາບອາກາດ ແຫ້ງໄວ ບໍ່ມີກິ່ນສານລະລາຍແຮງ."},
+  {id:"27735", code:"+27735 (5Z)", name:"ສີທາເຫຼັກເປືອຍທົ່ວໄປ ສູດນ້ຳ ເຄີ່ງເງົາ (LR-115)", price:358427, image:"https://placehold.co/300x300/f3720c/1a0d00?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:0, description:"ສີສູດນ້ຳ ຄວາມເຄີ່ງເງົາ ໂທນສີ LR-115 ແຫ້ງໄວ ໃຊ້ງານໄດ້ດີກັບພື້ນຜິວເຫຼັກເປືອຍ."},
+  {id:"24473", code:"+24473 (5Z)", name:"ສີຮອງພື້ນ ປູນເກົ່າ ແລະ ປູນໃໝ່ ຜາຍນອກ-ໃນ (#1000)", price:2254789, image:"https://placehold.co/300x300/e6533f/fff?text=Paint", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:25, description:"ສີຮອງພື້ນສຳລັບຝາປູນເກົ່າ ແລະ ໃໝ່ ໃຊ້ໄດ້ທັງພາຍນອກ ແລະ ພາຍໃນ."},
+  {id:"22129", code:"+22129 (3Z)", name:"ທິນເນີ ປະສົມແລກເກີ (No.R71) (1/4GL) TOA", price:121136, image:"https://placehold.co/300x300/1c1c1f/f2f0ec?text=Thinner", category:"ສີ ແລະ ອຸປະກອນທາສີ", qty:40, description:"ນ້ຳຢາທິນເນີສຳລັບປະສົມແລກເກີ ຮຸ້ນ No.R71 ຈາກ TOA ຂະໜາດ 1/4 ແກລອນ."},
+  {id:"67011", code:"+67011", name:"ດອກໄຟດອກປ້ອມ ແອວຈິດ (E27) ແສງຂາວ (6500K)", price:44174, image:"https://placehold.co/300x300/ffffff/222?text=LED", category:"ອຸປະກອນໄຟຟ້າ", qty:60, description:"ດອກໄຟ LED ຂົ້ວ E27 ແສງຂາວ 6500K ປະຢັດພະລັງງານ."},
+  {id:"67851", code:"+67851", name:"ປຕູນ້ຳ ເປີດ-ປິດ ແບບ 2ທາງ (ສະແຕນເລດ 304) ຮຸ້ນ SY01", price:155015, image:"https://placehold.co/300x300/ffffff/222?text=Valve", category:"ອຸປະກອນປະປາ", qty:15, description:"ປະຕູນ້ຳເປີດ-ປິດ 2 ທາງ ຜະລິດຈາກສະແຕນເລດເບີ 304 ທົນຕໍ່ສະໜິມ."},
+  {id:"58951", code:"+58951 (1Z)", name:"ຊີມັງກາວ ເວເບີ ໄທເຊບ ສຳລັບກະເບື້ອງ", price:108599, image:"https://placehold.co/300x300/ffe14d/222?text=Weber", category:"ວັດສະດຸກໍ່ສ້າງ", qty:30, description:"ຊີມັງກາວສຳລັບຕິດຕັ້ງກະເບື້ອງ ຈາກ Weber ຮຸ້ນໄທເຊບ ຍຶດເກາະດີ ທົນທານ."},
+  {id:"43196", code:"+43196", name:"ກ໊ອກສະໜາມ (ຂາຕັ້ງ) ຫົວທອງເຫຼືອງ ຫົວຟ້າ", price:80502, image:"https://placehold.co/300x300/ffffff/222?text=Faucet", category:"ອຸປະກອນປະປາ", qty:20, description:"ກ໊ອກນ້ຳສະໜາມແບບຂາຕັ້ງ ຫົວທອງເຫຼືອງແທ້ ທົນທານ ເໝາະສຳລັບນອກອາຄານ."},
+  {id:"34248", code:"+34248", name:"ບອບອາວ ສີຝາ (18mm) (150ອັນ/ຖົງ) SCG", price:30546, image:"https://placehold.co/300x300/ffffff/222?text=Screw", category:"ຮາດແວ ແລະ ເຄື່ອງມືຊ່າງ", qty:100, description:"ບອບອາວ ຂະໜາດ 18mm ບັນຈຸ 150 ອັນ/ຖົງ ຈາກ SCG ໃຊ້ສຳລັບຕິດຕັ້ງແຜ່ນຝາ."},
 ];
 
 let PRODUCTS = [];
+let CATEGORIES = [];
+let ORDERS = [];
+let CURRENT_QR = DEFAULT_QR;
 
 /* ---------------- AUTH ---------------- */
 function tryLogin(){
@@ -425,30 +521,73 @@ function enterApp(){
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("app").classList.add("show");
   loadProducts();
-  loadQr();
+  loadCategories();
+  loadSettings();
+  loadOrders();
+  refreshAll();
 }
 if(sessionStorage.getItem(AUTH_KEY) === "1"){
   enterApp();
 }
 
-/* ---------------- DATA ---------------- */
+/* ---------------- DATA: PRODUCTS ---------------- */
 function loadProducts(){
   const raw = localStorage.getItem(STORAGE_KEY);
   if(raw){
-    try{ PRODUCTS = JSON.parse(raw); }catch(e){ PRODUCTS = [...SAMPLE_PRODUCTS]; }
+    try{ PRODUCTS = JSON.parse(raw); }catch(e){ PRODUCTS = SAMPLE_PRODUCTS.map(p=>({...p})); }
   }else{
-    PRODUCTS = [...SAMPLE_PRODUCTS];
+    PRODUCTS = SAMPLE_PRODUCTS.map(p=>({...p}));
     persist();
   }
-  refreshAll();
+  PRODUCTS.forEach(p=>{ if(p.qty === undefined) p.qty = p.stock ? 1 : 0; if(p.description === undefined) p.description = ""; });
 }
 function persist(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(PRODUCTS));
 }
+
+/* ---------------- DATA: CATEGORIES ---------------- */
+function loadCategories(){
+  const raw = localStorage.getItem(CATEGORIES_KEY);
+  if(raw){
+    try{ CATEGORIES = JSON.parse(raw); }catch(e){ CATEGORIES = []; }
+  }
+  if(!CATEGORIES || !Array.isArray(CATEGORIES) || CATEGORIES.length === 0){
+    CATEGORIES = [...new Set(PRODUCTS.map(p=>p.category))];
+  }
+  if(!CATEGORIES.includes("ອື່ນໆ")) CATEGORIES.push("ອື່ນໆ");
+  persistCategories();
+}
+function persistCategories(){
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(CATEGORIES));
+}
+
+/* ---------------- DATA: ORDERS ---------------- */
+function loadOrders(){
+  try{ ORDERS = JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }catch(e){ ORDERS = []; }
+}
+function persistOrders(){
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(ORDERS));
+}
+
+/* ---------------- DATA: SETTINGS ---------------- */
+function loadSettings(){
+  let s = {};
+  try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ s = {}; }
+  document.getElementById("contactLabelInput").value = s.contactLabel || "ຕິດຕໍ່ສອບຖາມ";
+  document.getElementById("contactPlatformSelect").value = s.contactPlatform || "whatsapp";
+  document.getElementById("contactValueInput").value = s.contactValue || "020 9883 2516";
+  onContactPlatformChange();
+  CURRENT_QR = s.qrImage || DEFAULT_QR;
+  document.getElementById("qrPreviewImg").src = CURRENT_QR;
+}
+
+/* ---------------- REFRESH ---------------- */
 function refreshAll(){
   renderDashboard();
   renderCategoryOptions();
   renderProductTable();
+  renderCategoriesPage();
+  renderOrdersPage();
   renderJSArray();
 }
 
@@ -459,18 +598,22 @@ function goPage(name){
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));
   const btn = document.querySelector(`.nav-item[data-page="${name}"]`);
   if(btn) btn.classList.add("active");
-  if(name === "sync"){ renderJSArray(); renderQrCode(); }
+  if(name === "sync") renderJSArray();
+  if(name === "orders") renderOrdersPage();
+  if(name === "categories") renderCategoriesPage();
 }
 
 /* ---------------- DASHBOARD ---------------- */
 function renderDashboard(){
   const total = PRODUCTS.length;
-  const inStock = PRODUCTS.filter(p=>p.stock).length;
+  const inStock = PRODUCTS.filter(p=>p.qty>0).length;
   const cats = new Set(PRODUCTS.map(p=>p.category)).size;
   document.getElementById("statTotal").textContent = total;
   document.getElementById("statIn").textContent = inStock;
   document.getElementById("statOut").textContent = total - inStock;
   document.getElementById("statCats").textContent = cats;
+  document.getElementById("statOrders").textContent = ORDERS.length;
+  document.getElementById("statPending").textContent = ORDERS.filter(o=>o.status==="ລໍຖ້າກວດສອບ").length;
 
   const recent = [...PRODUCTS].slice(-6).reverse();
   const body = document.getElementById("recentTableBody");
@@ -483,21 +626,23 @@ function renderDashboard(){
       <td><div class="prod-cell"><img src="${escapeAttr(p.image)}"><div><div class="name">${escapeHtml(p.name)}</div><div class="code">${escapeHtml(p.code||p.id)}</div></div></div></td>
       <td><span class="tag-pill">${escapeHtml(p.category)}</span></td>
       <td>${formatKip(p.price)}</td>
-      <td>${p.stock ? '<span class="stock-badge in">✔ ມີສິນຄ້າ</span>' : '<span class="stock-badge out">✕ ໝົດ</span>'}</td>
+      <td>${p.qty>0 ? '<span class="stock-badge in">✔ ມີສິນຄ້າ</span>' : '<span class="stock-badge out">✕ ໝົດ</span>'}</td>
     </tr>
   `).join("");
 }
 
 /* ---------------- PRODUCT TABLE ---------------- */
 function renderCategoryOptions(){
-  const cats = [...new Set(PRODUCTS.map(p=>p.category))].sort();
+  const cats = [...CATEGORIES];
   const sel = document.getElementById("catFilterSelect");
   const current = sel.value;
   sel.innerHTML = `<option value="">ທຸກໝວດໝູ່</option>` + cats.map(c=>`<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
   sel.value = current;
 
-  const dl = document.getElementById("catList");
-  dl.innerHTML = cats.map(c=>`<option value="${escapeAttr(c)}">`).join("");
+  const fCat = document.getElementById("f_category");
+  const currentF = fCat.value;
+  fCat.innerHTML = cats.map(c=>`<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
+  if(cats.includes(currentF)) fCat.value = currentF;
 }
 
 function renderProductTable(){
@@ -508,8 +653,8 @@ function renderProductTable(){
   let list = PRODUCTS.filter(p=>{
     if(term && !p.name.toLowerCase().includes(term) && !(p.code||"").toLowerCase().includes(term) && !String(p.id).includes(term)) return false;
     if(cat && p.category !== cat) return false;
-    if(stockF === "in" && !p.stock) return false;
-    if(stockF === "out" && p.stock) return false;
+    if(stockF === "in" && !(p.qty>0)) return false;
+    if(stockF === "out" && p.qty>0) return false;
     return true;
   });
 
@@ -523,7 +668,7 @@ function renderProductTable(){
       <td><div class="prod-cell"><img src="${escapeAttr(p.image)}"><div><div class="name">${escapeHtml(p.name)}</div><div class="code">${escapeHtml(p.code||p.id)}</div></div></div></td>
       <td><span class="tag-pill">${escapeHtml(p.category)}</span></td>
       <td>${formatKip(p.price)}</td>
-      <td>${p.stock ? '<span class="stock-badge in">✔ ມີສິນຄ້າ</span>' : '<span class="stock-badge out">✕ ໝົດ</span>'}</td>
+      <td>${p.qty>0 ? `<span class="stock-badge in">✔ ${p.qty} ອັນ</span>` : '<span class="stock-badge out">✕ ໝົດ</span>'}</td>
       <td>
         <div class="row-actions">
           <button class="icon-action" title="ແກ້ໄຂ" onclick="openProductModal('${p.id}')">✏️</button>
@@ -534,9 +679,125 @@ function renderProductTable(){
   `).join("");
 }
 
-/* ---------------- MODAL / CRUD ---------------- */
+/* ---------------- CATEGORIES PAGE ---------------- */
+function renderCategoriesPage(){
+  const body = document.getElementById("categoryTableBody");
+  if(CATEGORIES.length === 0){ body.innerHTML = `<tr><td colspan="3" class="empty-row">ຍັງບໍ່ມີໝວດໝູ່</td></tr>`; return; }
+  body.innerHTML = CATEGORIES.map(c=>{
+    const count = PRODUCTS.filter(p=>p.category===c).length;
+    return `<tr>
+      <td>${escapeHtml(c)}</td>
+      <td>${count} ລາຍການ</td>
+      <td>
+        <div class="row-actions">
+          <button class="icon-action" title="ປ່ຽນຊື່" onclick="renameCategory('${escapeAttr(c)}')">✏️</button>
+          <button class="icon-action" title="ລຶບ" onclick="deleteCategory('${escapeAttr(c)}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+function addCategory(){
+  const input = document.getElementById("newCatInput");
+  const name = input.value.trim();
+  if(!name){ showToast("ກະລຸນາປ້ອນຊື່ໝວດໝູ່", true); return; }
+  if(CATEGORIES.includes(name)){ showToast("ໝວດໝູ່ນີ້ມີແລ້ວ", true); return; }
+  CATEGORIES.push(name);
+  persistCategories();
+  input.value = "";
+  refreshAll();
+  showToast("ເພີ່ມໝວດໝູ່ແລ້ວ");
+}
+function renameCategory(oldName){
+  const name = prompt("ປ່ຽນຊື່ໝວດໝູ່:", oldName);
+  if(!name || !name.trim() || name.trim()===oldName) return;
+  const trimmed = name.trim();
+  if(CATEGORIES.includes(trimmed)){ showToast("ຊື່ນີ້ຊ້ຳກັບໝວດໝູ່ທີ່ມີແລ້ວ", true); return; }
+  CATEGORIES = CATEGORIES.map(c=>c===oldName?trimmed:c);
+  PRODUCTS.forEach(p=>{ if(p.category===oldName) p.category=trimmed; });
+  persistCategories(); persist();
+  refreshAll();
+  showToast("ປ່ຽນຊື່ໝວດໝູ່ແລ້ວ");
+}
+function deleteCategory(name){
+  if(name === "ອື່ນໆ"){ showToast('ບໍ່ສາມາດລຶບໝວດ "ອື່ນໆ" ໄດ້', true); return; }
+  const count = PRODUCTS.filter(p=>p.category===name).length;
+  const msg = count>0 ? `ມີ ${count} ສິນຄ້າຢູ່ໃນໝວດນີ້, ຈະຖືກຍ້າຍໄປ "ອື່ນໆ". ຢືນຢັນລຶບບໍ?` : "ຢືນຢັນລຶບໝວດໝູ່ນີ້ບໍ?";
+  if(!confirm(msg)) return;
+  CATEGORIES = CATEGORIES.filter(c=>c!==name);
+  if(!CATEGORIES.includes("ອື່ນໆ")) CATEGORIES.push("ອື່ນໆ");
+  PRODUCTS.forEach(p=>{ if(p.category===name) p.category="ອື່ນໆ"; });
+  persistCategories(); persist();
+  refreshAll();
+  showToast("ລຶບໝວດໝູ່ແລ້ວ");
+}
+function addCategoryInline(){
+  const name = prompt("ຊື່ໝວດໝູ່ໃໝ່:");
+  if(!name || !name.trim()) return;
+  const trimmed = name.trim();
+  if(!CATEGORIES.includes(trimmed)){
+    CATEGORIES.push(trimmed);
+    persistCategories();
+    renderCategoryOptions();
+    renderCategoriesPage();
+  }
+  document.getElementById("f_category").value = trimmed;
+}
+
+/* ---------------- ORDERS PAGE ---------------- */
+function renderOrdersPage(){
+  loadOrders();
+  const filterVal = document.getElementById("orderStatusFilter").value;
+  let list = [...ORDERS];
+  const indices = list.map((_,i)=>i);
+  let filtered = indices.filter(i => !filterVal || ORDERS[i].status === filterVal).reverse();
+
+  const body = document.getElementById("ordersTableBody");
+  if(filtered.length === 0){
+    body.innerHTML = `<tr><td colspan="6" class="empty-row">ຍັງບໍ່ມີຄຳສັ່ງຊື້</td></tr>`;
+    return;
+  }
+  const statusOptions = ["ລໍຖ້າກວດສອບ","ຢືນຢັນແລ້ວ","ກຳລັງຈັດສົ່ງ","ສຳເລັດ","ຍົກເລີກ"];
+  body.innerHTML = filtered.map(i=>{
+    const o = ORDERS[i];
+    const date = new Date(o.createdAt).toLocaleString("lo-LA");
+    return `<tr>
+      <td><strong>${escapeHtml(o.code)}</strong><div class="code">${escapeHtml(date)}</div></td>
+      <td>${escapeHtml(o.name)}<div class="code">${escapeHtml(o.phone)}</div></td>
+      <td>${escapeHtml(o.payMethod)}${o.slipImage?` <button class="icon-action" onclick="viewSlip(${i})">🧾 ສະລິບ</button>`:""}</td>
+      <td>${formatKip(o.total)}</td>
+      <td>
+        <select onchange="updateOrderStatus(${i}, this.value)">
+          ${statusOptions.map(s=>`<option value="${s}" ${o.status===s?"selected":""}>${escapeHtml(s)}</option>`).join("")}
+        </select>
+      </td>
+      <td><button class="icon-action" title="ລຶບ" onclick="deleteOrder(${i})">🗑</button></td>
+    </tr>`;
+  }).join("");
+}
+function updateOrderStatus(idx, status){
+  ORDERS[idx].status = status;
+  persistOrders();
+  showToast("ອັບເດດສະຖານະຄຳສັ່ງຊື້ແລ້ວ");
+  renderDashboard();
+}
+function deleteOrder(idx){
+  if(!confirm("ຢືນຢັນລຶບຄຳສັ່ງຊື້ນີ້ບໍ?")) return;
+  ORDERS.splice(idx,1);
+  persistOrders();
+  renderOrdersPage();
+  renderDashboard();
+}
+function viewSlip(idx){
+  document.getElementById("slipViewImg").src = ORDERS[idx].slipImage;
+  document.getElementById("slipViewModal").classList.add("show");
+}
+
+/* ---------------- MODAL / PRODUCT CRUD ---------------- */
 function openProductModal(id){
+  renderCategoryOptions();
   document.getElementById("productModal").classList.add("show");
+  document.getElementById("f_imageFile").value = "";
   if(id){
     const p = PRODUCTS.find(x=>String(x.id)===String(id));
     if(!p) return;
@@ -546,12 +807,12 @@ function openProductModal(id){
     document.getElementById("f_id").disabled = true;
     document.getElementById("f_code").value = p.code || "";
     document.getElementById("f_name").value = p.name;
-    document.getElementById("f_price").value = p.price;
-    document.getElementById("f_category").value = p.category;
     document.getElementById("f_description").value = p.description || "";
+    document.getElementById("f_price").value = p.price;
+    document.getElementById("f_qty").value = p.qty || 0;
+    if(CATEGORIES.includes(p.category)) document.getElementById("f_category").value = p.category;
     document.getElementById("f_image").value = p.image;
     document.getElementById("f_imgPreview").src = p.image || "https://placehold.co/100x100/222/fff?text=?";
-    document.getElementById("f_stock").checked = !!p.stock;
   }else{
     document.getElementById("modalTitle").textContent = "ເພີ່ມສິນຄ້າໃໝ່";
     document.getElementById("editId").value = "";
@@ -559,16 +820,17 @@ function openProductModal(id){
     document.getElementById("f_id").disabled = false;
     document.getElementById("f_code").value = "";
     document.getElementById("f_name").value = "";
-    document.getElementById("f_price").value = "";
-    document.getElementById("f_category").value = "";
     document.getElementById("f_description").value = "";
+    document.getElementById("f_price").value = "";
+    document.getElementById("f_qty").value = "";
+    document.getElementById("f_category").selectedIndex = 0;
     document.getElementById("f_image").value = "";
     document.getElementById("f_imgPreview").src = "https://placehold.co/100x100/222/fff?text=?";
-    document.getElementById("f_stock").checked = true;
   }
-  document.getElementById("f_imageFile").value = "";
 }
-
+function closeProductModal(){
+  document.getElementById("productModal").classList.remove("show");
+}
 function onProductImageFile(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -579,19 +841,16 @@ function onProductImageFile(event){
   };
   reader.readAsDataURL(file);
 }
-function closeProductModal(){
-  document.getElementById("productModal").classList.remove("show");
-}
 
 function saveProduct(){
   const editId = document.getElementById("editId").value;
   const name = document.getElementById("f_name").value.trim();
-  const price = Number(document.getElementById("f_price").value) || 0;
-  const category = document.getElementById("f_category").value.trim() || "ອື່ນໆ";
-  const code = document.getElementById("f_code").value.trim();
   const description = document.getElementById("f_description").value.trim();
+  const price = Number(document.getElementById("f_price").value) || 0;
+  const qty = Math.max(0, Number(document.getElementById("f_qty").value) || 0);
+  const category = document.getElementById("f_category").value || "ອື່ນໆ";
+  const code = document.getElementById("f_code").value.trim();
   const image = document.getElementById("f_image").value.trim() || "https://placehold.co/300x300/222/fff?text=No+Image";
-  const stock = document.getElementById("f_stock").checked;
   let id = document.getElementById("f_id").value.trim();
 
   if(!name){ showToast("ກະລຸນາປ້ອນຊື່ສິນຄ້າ", true); return; }
@@ -599,7 +858,7 @@ function saveProduct(){
   if(editId){
     const idx = PRODUCTS.findIndex(p=>String(p.id)===String(editId));
     if(idx > -1){
-      PRODUCTS[idx] = {...PRODUCTS[idx], code, name, price, category, description, image, stock};
+      PRODUCTS[idx] = {...PRODUCTS[idx], code, name, description, price, category, image, qty};
     }
     showToast("ບັນທຶກການແກ້ໄຂແລ້ວ");
   }else{
@@ -607,7 +866,7 @@ function saveProduct(){
     if(PRODUCTS.some(p=>String(p.id)===String(id))){
       showToast("ID ນີ້ຖືກໃຊ້ແລ້ວ, ກະລຸນາປ່ຽນ ID", true); return;
     }
-    PRODUCTS.push({id, code, name, price, category, description, image, stock});
+    PRODUCTS.push({id, code, name, description, price, category, image, qty});
     showToast("ເພີ່ມສິນຄ້າໃໝ່ແລ້ວ");
   }
   persist();
@@ -625,17 +884,19 @@ function deleteProduct(id){
 
 function resetData(){
   if(!confirm("ຈະລ້າງຂໍ້ມູນສິນຄ້າທັງໝົດ ແລະ ໂຫລດຄືນຈາກຊຸດຕົວຢ່າງ, ຢືນຢັນບໍ?")) return;
-  PRODUCTS = [...SAMPLE_PRODUCTS];
+  PRODUCTS = SAMPLE_PRODUCTS.map(p=>({...p}));
   persist();
+  CATEGORIES = [...new Set(PRODUCTS.map(p=>p.category)), "ອື່ນໆ"];
+  persistCategories();
   refreshAll();
   showToast("ຣີເຊັດຂໍ້ມູນແລ້ວ");
 }
 
 /* ---------------- CSV EXPORT / IMPORT ---------------- */
 function exportCSV(){
-  const rows = [["id","code","name","price","image","category","stock","description"]];
+  const rows = [["id","code","name","price","image","category","qty","description"]];
   PRODUCTS.forEach(p=>{
-    rows.push([p.id, p.code||"", p.name, p.price, p.image, p.category, p.stock ? "true":"false", p.description||""]);
+    rows.push([p.id, p.code||"", p.name, p.price, p.image, p.category, p.qty||0, p.description||""]);
   });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
@@ -657,15 +918,17 @@ function importCSV(evt){
           id: row.id || row.ID || row.code || ("p"+Date.now()+Math.random().toString(36).slice(2,6)),
           code: row.code || row.id || "",
           name: row.name || row.ຊື່ || "ບໍ່ມີຊື່",
+          description: row.description || row.ລາຍລະອຽດ || "",
           price: Number(String(row.price || 0).replace(/[^0-9.]/g,"")) || 0,
           image: row.image || "https://placehold.co/300x300/222/fff?text=No+Image",
           category: row.category || "ອື່ນໆ",
-          stock: String(row.stock).toLowerCase() !== "false" && String(row.stock).trim() !== "0",
-          description: row.description || row.ລາຍລະອຽດ || "",
+          qty: row.qty !== undefined ? Number(row.qty)||0 : (String(row.stock).toLowerCase()!=="false" && String(row.stock).trim()!=="0" ? 1 : 0),
         }));
         if(imported.length === 0) throw new Error("empty");
         PRODUCTS = imported;
         persist();
+        CATEGORIES = [...new Set([...CATEGORIES, ...PRODUCTS.map(p=>p.category)])];
+        persistCategories();
         refreshAll();
         showToast(`ນຳເຂົ້າ ${imported.length} ລາຍການສຳເລັດ`);
       }catch(e){
@@ -683,7 +946,7 @@ function importCSV(evt){
 /* ---------------- COPY JS ARRAY ---------------- */
 function buildJSArrayString(){
   const lines = PRODUCTS.map(p => {
-    return `  {id:${JSON.stringify(String(p.id))}, code:${JSON.stringify(p.code||"")}, name:${JSON.stringify(p.name)}, price:${Number(p.price)||0}, image:${JSON.stringify(p.image)}, category:${JSON.stringify(p.category)}, stock:${p.stock?"true":"false"}, description:${JSON.stringify(p.description||"")}},`;
+    return `  {id:${JSON.stringify(String(p.id))}, code:${JSON.stringify(p.code||"")}, name:${JSON.stringify(p.name)}, price:${Number(p.price)||0}, image:${JSON.stringify(p.image)}, category:${JSON.stringify(p.category)}, qty:${Number(p.qty)||0}, description:${JSON.stringify(p.description||"")}},`;
   });
   return "const SAMPLE_PRODUCTS = [\n" + lines.join("\n") + "\n];";
 }
@@ -699,23 +962,61 @@ function copyJSArray(){
   });
 }
 
-/* ---------------- STORE QR ---------------- */
-let CURRENT_QR = DEFAULT_QR;
-
-function loadQr(){
-  CURRENT_QR = localStorage.getItem(QR_KEY) || DEFAULT_QR;
-  document.getElementById("qrPreviewImg").src = CURRENT_QR;
-  document.getElementById("qrUrlInput").value = CURRENT_QR.startsWith("data:") ? "" : CURRENT_QR;
-  renderQrCode();
+/* ---------------- SETTINGS: CONTACT ---------------- */
+function onContactPlatformChange(){
+  const platform = document.getElementById("contactPlatformSelect").value;
+  const label = document.getElementById("contactValueLabel");
+  const input = document.getElementById("contactValueInput");
+  const labels = {
+    whatsapp:"ເບີໂທ (WhatsApp)", messenger:"Facebook username",
+    telegram:"Telegram username", line:"Line ID / ລິ້ງ",
+    phone:"ເບີໂທ", custom:"ລິ້ງ URL ເຕັມ"
+  };
+  const placeholders = {
+    whatsapp:"020 9883 2516", messenger:"laobuild.store",
+    telegram:"laobuild_support", line:"@laobuild",
+    phone:"020 9883 2516", custom:"https://..."
+  };
+  label.textContent = labels[platform] || "ຂໍ້ມູນຕິດຕໍ່";
+  input.placeholder = placeholders[platform] || "";
+  updateContactPreview();
 }
-function onQrUrlInput(){
-  const val = document.getElementById("qrUrlInput").value.trim();
-  if(val){
-    CURRENT_QR = val;
-    document.getElementById("qrPreviewImg").src = val;
-    renderQrCode();
+function toIntlPhone(p){
+  let digits = String(p||"").replace(/[^0-9]/g,"");
+  if(digits.startsWith("0")) digits = digits.slice(1);
+  if(!digits.startsWith("856")) digits = "856"+digits;
+  return digits;
+}
+function buildContactHref(platform, raw){
+  raw = (raw||"").trim();
+  switch(platform){
+    case "whatsapp": return `https://wa.me/${toIntlPhone(raw)}`;
+    case "messenger": return `https://m.me/${raw.replace(/^@/,"")}`;
+    case "telegram": return `https://t.me/${raw.replace(/^@/,"")}`;
+    case "line": return raw.startsWith("http") ? raw : `https://line.me/ti/p/${raw}`;
+    case "phone": return `tel:${raw.replace(/\s+/g,"")}`;
+    case "custom": return raw.startsWith("http") ? raw : ("https://"+raw);
+    default: return raw;
   }
 }
+function updateContactPreview(){
+  const platform = document.getElementById("contactPlatformSelect").value;
+  const val = document.getElementById("contactValueInput").value;
+  document.getElementById("contactPreviewNote").textContent = "ລິ້ງທີ່ຈະໃຊ້: " + buildContactHref(platform, val);
+}
+document.getElementById("contactValueInput").addEventListener("input", updateContactPreview);
+
+function saveContactSettings(){
+  let s = {};
+  try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ s = {}; }
+  s.contactLabel = document.getElementById("contactLabelInput").value.trim() || "ຕິດຕໍ່ສອບຖາມ";
+  s.contactPlatform = document.getElementById("contactPlatformSelect").value;
+  s.contactValue = document.getElementById("contactValueInput").value.trim();
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  showToast("ບັນທຶກການຕັ້ງຄ່າຕິດຕໍ່ແລ້ວ");
+}
+
+/* ---------------- SETTINGS: QR ---------------- */
 function onQrFile(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -723,29 +1024,18 @@ function onQrFile(event){
   reader.onload = function(e){
     CURRENT_QR = e.target.result;
     document.getElementById("qrPreviewImg").src = CURRENT_QR;
-    document.getElementById("qrUrlInput").value = "";
-    renderQrCode();
   };
   reader.readAsDataURL(file);
 }
 function saveQr(){
-  localStorage.setItem(QR_KEY, CURRENT_QR);
+  let s = {};
+  try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ s = {}; }
+  s.qrImage = CURRENT_QR;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
   showToast("ບັນທຶກ QR ຮ້ານແລ້ວ");
-  renderQrCode();
-}
-function renderQrCode(){
-  document.getElementById("qrCodeOutput").textContent = `const STORE_QR_IMAGE = ${JSON.stringify(CURRENT_QR)};`;
-}
-function copyQrCode(){
-  const text = `const STORE_QR_IMAGE = ${JSON.stringify(CURRENT_QR)};`;
-  navigator.clipboard.writeText(text).then(()=>{
-    showToast("ກັອບປີ້ໂຄ້ດ QR ແລ້ວ, ນຳໄປວາງແທນໃນ index.html");
-  }).catch(()=>{
-    showToast("ກັອບປີ້ບໍ່ສຳເລັດ, ກະລຸນາເລືອກຂໍ້ຄວາມແລ້ວກັອບປີ້ດ້ວຍມື", true);
-  });
 }
 
-/* ---------------- SETTINGS ---------------- */
+/* ---------------- SETTINGS: PASSWORD ---------------- */
 function changePassword(){
   const val = document.getElementById("newPwInput").value;
   if(val.length < 4){ showToast("ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 4 ຕົວອັກສອນ", true); return; }
